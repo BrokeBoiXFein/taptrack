@@ -1,0 +1,8 @@
+# AI use log
+
+Required for the 2026 Congressional App Challenge disclosure. Add a line for each session.
+
+| Date | Tool | What AI helped with | What I did myself |
+| --- | --- | --- | --- |
+| 2026-10-14 to 2026-10-20 | Claude | Researched NY-03 issues and past winners, compared app ideas, reviewed H2OScore | Chose the water quality idea |
+| 2026-10-20 | Claude | Transcribed values from Jericho (2018 to 2025) and Plainview (2019 to 2025) reports into data/water.json, drew screen designs, wrote the first version of the app and build script | |

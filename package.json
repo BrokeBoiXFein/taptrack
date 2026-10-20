@@ -1,0 +1,12 @@
+{
+  "name": "taptrack",
+  "private": true,
+  "description": "Free, year-by-year tap water history for Long Island water districts",
+  "scripts": {
+    "build": "python build.py",
+    "test": "python build.py && node --test tests/*.test.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  }
+}

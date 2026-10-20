@@ -1,0 +1,200 @@
+"""Pull contaminant rows out of a district's Annual Drinking Water Quality Report PDF.
+
+Usage:
+  python tools/extract.py <pdf url or path>         print every row found for each contaminant
+  python tools/extract.py --check                   compare every report in data/water.json
+  python tools/extract.py --check --district jericho --year 2024
+
+The check never edits data/water.json. It prints a table and a list of
+mismatches to check by hand against the PDF.
+
+How it works: pdfplumber reads the text of each page (and any tables it can
+detect). A line belongs to a contaminant if it names it. Numbers and units on
+that line are pulled out. A JSON value "matches" when the same number appears
+on one of that contaminant's lines in that year's report.
+"""
+import argparse
+import hashlib
+import json
+import pathlib
+import re
+import sys
+import urllib.request
+
+import pdfplumber
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+CACHE = ROOT / "tools" / ".cache"
+
+# How each contaminant is named in the reports.
+NAMES = {
+    "dioxane": r"1\s*,\s*4\s*-?\s*dioxane",
+    "pfoa": r"\bPFOA\b|perfluoro-?\s*octanoic",
+    "pfos": r"\bPFOS\b|perfluoro-?\s*octane\s*sulfon",
+    "nitrate": r"\bnitrate",
+    "lead": r"\blead\b",
+}
+# Fixed TapTrack units, for flagging rows printed in a different unit.
+EXPECTED_UNIT = {"dioxane": "ug/l", "pfoa": "ng/l", "pfos": "ng/l", "nitrate": "mg/l", "lead": "ug/l"}
+UNIT_RE = re.compile(r"(µg/l|μg/l|ug/l|ng/l|mg/l|ppb|ppt|ppm)", re.I)
+UNIT_NORM = {"µg/l": "ug/l", "μg/l": "ug/l", "ug/l": "ug/l", "ppb": "ug/l", "ng/l": "ng/l", "ppt": "ng/l", "mg/l": "mg/l", "ppm": "mg/l"}
+MONTHS = r"jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?"
+DATE_RE = re.compile(
+    r"\b\d{1,2}/\d{1,2}/\d{2,4}\b"            # 3/14/22
+    r"|\b\d{1,2}/\d{4}\b"                       # 3/2022
+    r"|\b(?:" + MONTHS + r")\.?\s*\d{0,2},?\s*(?:20\d\d)?\b"  # March 2022
+    r"|\b20[0-3]\d\s*[-–]\s*20[0-3]\d\b"       # 2021-2022
+    r"|\b20[0-3]\d\b"                           # 2022
+    r"|\bquarterly\b|\bmonthly\b|\bannual(?:ly)?\b",
+    re.I,
+)
+NUM_RE = re.compile(r"(?<![A-Za-z\d.])(\d+(?:\.\d+)?)")
+ND_RE = re.compile(r"\bN\.?D\.?\b|non-?detect|not detected", re.I)
+
+
+def fetch(src):
+    """Return a local path for a URL (downloaded once into tools/.cache) or a file path."""
+    if not re.match(r"https?://", src):
+        return pathlib.Path(src)
+    CACHE.mkdir(parents=True, exist_ok=True)
+    name = hashlib.sha1(src.encode()).hexdigest()[:12] + "_" + src.rsplit("/", 1)[-1]
+    path = CACHE / name
+    if not path.exists():
+        req = urllib.request.Request(src, headers={"User-Agent": "Mozilla/5.0 (TapTrack report checker)"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            path.write_bytes(r.read())
+    return path
+
+
+def lines_of(path):
+    """Every text line, plus every detected table row joined with ' | '."""
+    out = []
+    with pdfplumber.open(path) as pdf:
+        for n, page in enumerate(pdf.pages, 1):
+            text = page.extract_text() or ""
+            raw = [l.strip() for l in text.splitlines() if l.strip()]
+            for i, l in enumerate(raw):
+                out.append({"page": n, "text": l, "next": raw[i + 1: i + 3]})
+            for table in page.extract_tables() or []:
+                for row in table:
+                    cells = [re.sub(r"\s+", " ", c or "").strip() for c in row]
+                    if any(cells):
+                        out.append({"page": n, "text": " | ".join(cells), "next": [], "table": True})
+    return out
+
+
+def parse(key, line):
+    """Pull numbers, units, dates and ND marks from one contaminant line."""
+    text = line["text"]
+    body = re.sub(NAMES[key], " ", text, flags=re.I)
+    # Name on one line, numbers on the next: borrow the following lines.
+    if not NUM_RE.search(DATE_RE.sub(" ", body)) and line["next"]:
+        body += " " + " ".join(line["next"])
+    dates = [d.strip() for d in DATE_RE.findall(body) if d.strip()]
+    rest = DATE_RE.sub(" ", body)
+    units = sorted({UNIT_NORM[u.lower()] for u in UNIT_RE.findall(rest)})
+    rest = UNIT_RE.sub(" ", rest)
+    nums = [float(n) for n in NUM_RE.findall(rest)]
+    return {"page": line["page"], "text": text, "nums": nums, "units": units, "dates": dates,
+            "nd": bool(ND_RE.search(body)), "table": line.get("table", False)}
+
+
+def is_row(key, p):
+    """Keep lines that look like a results row, not running text."""
+    if not (p["nums"] or p["nd"]):
+        return False
+    if key == "lead":
+        # "lead" shows up in a lot of prose about service lines. Results rows have a unit or "90th".
+        return bool(p["units"]) or bool(re.search(r"90", p["text"]))
+    return len(p["text"]) < 220 or p["table"]
+
+
+def extract(src):
+    lines = lines_of(fetch(src))
+    found = {k: [] for k in NAMES}
+    for line in lines:
+        for key, pat in NAMES.items():
+            if re.search(pat, line["text"], re.I):
+                p = parse(key, line)
+                if is_row(key, p):
+                    found[key].append(p)
+    return found, len(lines)
+
+
+def show(src):
+    found, n = extract(src)
+    print(src)
+    if not n:
+        print("  No text layer. The PDF may be a scan; check it by hand.")
+        return
+    for key, rows in found.items():
+        print(f"\n  {key.upper()}  ({len(rows)} rows)")
+        for p in rows:
+            unit = ",".join(p["units"]) or "-"
+            flag = "  <-- unit differs" if p["units"] and EXPECTED_UNIT[key] not in p["units"] else ""
+            print(f"    p{p['page']:<3} nums={fmtnums(p['nums'])} nd={'Y' if p['nd'] else '-'} unit={unit} dates={p['dates'][:3]}{flag}")
+            print(f"         {p['text'][:150]}")
+
+
+def fmtnums(nums):
+    return "[" + ", ".join(f"{x:g}" for x in nums) + "]"
+
+
+def check(district_id=None, year=None):
+    data = json.loads((ROOT / "data" / "water.json").read_text(encoding="utf-8"))
+    rows, problems = [], []
+    for d in data["districts"]:
+        if district_id and d["id"] != district_id:
+            continue
+        for y, url in sorted(d["reports"].items()):
+            if year and y != str(year):
+                continue
+            try:
+                found, n = extract(url)
+            except Exception as e:  # network or PDF trouble: report it, keep going
+                problems.append(f"{d['id']} {y}: could not read report ({e}). {url}")
+                continue
+            if not n:
+                problems.append(f"{d['id']} {y}: no text layer, check by hand. {url}")
+                continue
+            for key in NAMES:
+                have = d["series"].get(key, {}).get(y)
+                hits = found[key]
+                nums = sorted({x for p in hits for x in p["nums"]})
+                units = sorted({u for p in hits for u in p["units"]})
+                if have is None:
+                    status = "report has rows, JSON blank" if nums else "-"
+                elif have == 0:
+                    status = "match (ND)" if any(p["nd"] for p in hits) else ("NOT FOUND" if not hits else "MISMATCH")
+                else:
+                    status = "match" if any(abs(x - have) < 1e-9 for x in nums) else ("NOT FOUND" if not hits else "MISMATCH")
+                unit_flag = bool(units) and EXPECTED_UNIT[key] not in units
+                rows.append((d["id"], y, key, have, nums, units, status, unit_flag))
+                if status not in ("match", "match (ND)", "-") or unit_flag:
+                    pages = sorted({p["page"] for p in hits})
+                    why = status + ("; unit printed as " + ",".join(units) if unit_flag else "")
+                    problems.append(f"{d['id']} {y} {key}: JSON={have} report numbers={fmtnums(nums[:12])} pages={pages} -> {why}. {url}")
+
+    print(f"{'district':<10} {'year':<5} {'contam':<8} {'json':>7}  {'status':<28} report numbers")
+    for did, y, key, have, nums, units, status, uf in rows:
+        h = "-" if have is None else f"{have:g}"
+        print(f"{did:<10} {y:<5} {key:<8} {h:>7}  {status + (' (unit)' if uf else ''):<28} {fmtnums(nums[:10])} {','.join(units)}")
+    print(f"\n{len(problems)} items to check by hand:")
+    for p in problems:
+        print("  - " + p)
+
+
+if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("src", nargs="?", help="report PDF URL or path")
+    ap.add_argument("--check", action="store_true", help="compare data/water.json against every report")
+    ap.add_argument("--district")
+    ap.add_argument("--year")
+    a = ap.parse_args()
+    if a.check:
+        check(a.district, a.year)
+    elif a.src:
+        show(a.src)
+    else:
+        ap.print_help()

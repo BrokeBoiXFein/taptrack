@@ -50,6 +50,8 @@ DATE_RE = re.compile(
 )
 NUM_RE = re.compile(r"(?<![A-Za-z\d.])(\d+(?:\.\d+)?)")
 ND_RE = re.compile(r"\bN\.?D\.?\b|non-?detect|not detected", re.I)
+# Heading of a "tested for but not found" list, e.g. "over 130 different contaminants which have been undetected".
+ND_LIST_RE = re.compile(r"contaminants\s+(?:which|that)\s+(?:have\s+been|were)\s+(?:undetected|not\s+detected)", re.I)
 
 
 def fetch(src):
@@ -67,14 +69,16 @@ def fetch(src):
 
 
 def lines_of(path):
-    """Every text line, plus every detected table row joined with ' | '."""
+    """Every text line, plus every detected table row joined with ' | '.
+    Lines on a page with a "not detected" list heading are marked nd_page."""
     out = []
     with pdfplumber.open(path) as pdf:
         for n, page in enumerate(pdf.pages, 1):
             text = page.extract_text() or ""
             raw = [l.strip() for l in text.splitlines() if l.strip()]
+            nd_page = bool(ND_LIST_RE.search(re.sub(r"\s+", " ", text)))
             for i, l in enumerate(raw):
-                out.append({"page": n, "text": l, "next": raw[i + 1: i + 3]})
+                out.append({"page": n, "text": l, "next": raw[i + 1: i + 3], "nd_page": nd_page})
             for table in page.extract_tables() or []:
                 for row in table:
                     cells = [re.sub(r"\s+", " ", c or "").strip() for c in row]
@@ -112,23 +116,27 @@ def is_row(key, p):
 def extract(src):
     lines = lines_of(fetch(src))
     found = {k: [] for k in NAMES}
+    nd_list = {k: False for k in NAMES}
     for line in lines:
         for key, pat in NAMES.items():
             if re.search(pat, line["text"], re.I):
+                # A list line has no unit and no decimal result (chemical names like "2,4-D" have digits).
+                if line.get("nd_page") and not UNIT_RE.search(line["text"]) and not re.search(r"\d\.\d", line["text"]):
+                    nd_list[key] = True  # named in a "tested, not detected" list
                 p = parse(key, line)
                 if is_row(key, p):
                     found[key].append(p)
-    return found, len(lines)
+    return found, nd_list, len(lines)
 
 
 def show(src):
-    found, n = extract(src)
+    found, nd_list, n = extract(src)
     print(src)
     if not n:
         print("  No text layer. The PDF may be a scan; check it by hand.")
         return
     for key, rows in found.items():
-        print(f"\n  {key.upper()}  ({len(rows)} rows)")
+        print(f"\n  {key.upper()}  ({len(rows)} rows)" + ("  listed as tested, not detected" if nd_list[key] else ""))
         for p in rows:
             unit = ",".join(p["units"]) or "-"
             flag = "  <-- unit differs" if p["units"] and EXPECTED_UNIT[key] not in p["units"] else ""
@@ -150,7 +158,7 @@ def check(district_id=None, year=None):
             if year and y != str(year):
                 continue
             try:
-                found, n = extract(url)
+                found, nd_list, n = extract(url)
             except Exception as e:  # network or PDF trouble: report it, keep going
                 problems.append(f"{d['id']} {y}: could not read report ({e}). {url}")
                 continue
@@ -163,14 +171,15 @@ def check(district_id=None, year=None):
                 nums = sorted({x for p in hits for x in p["nums"]})
                 units = sorted({u for p in hits for u in p["units"]})
                 if have is None:
-                    status = "report has rows, JSON blank" if nums else "-"
+                    status = "listed ND, JSON blank" if nd_list[key] else ("report has rows, JSON blank" if nums else "-")
                 elif have == 0:
-                    status = "match (ND)" if any(p["nd"] for p in hits) else ("NOT FOUND" if not hits else "MISMATCH")
+                    status = ("match (ND)" if any(p["nd"] for p in hits) else "match (ND list)" if nd_list[key]
+                              else "NOT FOUND" if not hits else "MISMATCH")
                 else:
                     status = "match" if any(abs(x - have) < 1e-9 for x in nums) else ("NOT FOUND" if not hits else "MISMATCH")
                 unit_flag = bool(units) and EXPECTED_UNIT[key] not in units
                 rows.append((d["id"], y, key, have, nums, units, status, unit_flag))
-                if status not in ("match", "match (ND)", "-") or unit_flag:
+                if status not in ("match", "match (ND)", "match (ND list)", "-") or unit_flag:
                     pages = sorted({p["page"] for p in hits})
                     why = status + ("; unit printed as " + ",".join(units) if unit_flag else "")
                     problems.append(f"{d['id']} {y} {key}: JSON={have} report numbers={fmtnums(nums[:12])} pages={pages} -> {why}. {url}")

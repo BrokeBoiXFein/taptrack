@@ -141,7 +141,8 @@
    "notes": [
     "The 2025 report's table lists PFOA in µg/L, but the value matches earlier years only if it is ng/L. TapTrack treats it as ng/L.",
     "The 2025 report lists one nitrate result of 36.7 mg/L, more than three times the limit, while marking no violation. TapTrack uses the 6.4 mg/L nitrate-nitrite figure the report discusses. Ask the district to confirm.",
-    "The 2024 report flags a PFOA violation in its table but says no violations occurred. The text describes missed quarterly PFOA sampling (a monitoring violation)."
+    "The 2024 report flags a PFOA violation in its table but says no violations occurred. The text describes missed quarterly PFOA sampling (a monitoring violation).",
+    "The 2024 report's table lists PFOA's limit as 50,000 ng/L. That is the limit for other PFAS. The report's own footnote says it does not apply to PFOA. New York's PFOA limit is 10 ng/L."
    ],
    "reports": {
     "2025": "https://www.jerichowater.org/wp-content/uploads/2026/05/JWD_2025_ADWQR.pdf",
@@ -175,14 +176,19 @@
     "pfoa": {
      "2019": 2.1,
      "2020": 6.4,
+     "2021": 0,
+     "2022": 0,
      "2023": 4.9,
      "2024": 4.3,
      "2025": 3.27
     },
     "pfos": {
      "2020": 2.0,
+     "2021": 0,
+     "2022": 0,
      "2023": 2.5,
-     "2024": 3.7
+     "2024": 3.7,
+     "2025": 0
     },
     "nitrate": {
      "2019": 7.7,
@@ -222,8 +228,9 @@
     }
    ],
    "notes": [
-    "The 2021 and 2022 reports describe PFOA and PFOS standards but give no measured values, so those years are blank in the chart.",
-    "Lead results come from home tap sampling every three years. The 90th percentile was non-detect in 2020 and 2023."
+    "The 2021 and 2022 reports list PFOA and PFOS among the contaminants tested but not detected, and the 2025 report does the same for PFOS. TapTrack shows those years as ND.",
+    "Lead results come from home tap sampling every three years. The 90th percentile was non-detect in 2020 and 2023.",
+    "Lead sampling in June to September 2017 found one home at 91.7 µg/L, about six times the action level of 15. The 90th percentile was 1.3, so the district met the rule. The 2019 report shows this."
    ],
    "reports": {
     "2025": "https://plainviewwater.org/wp-content/uploads/2026/05/26.04.21-2025-PLWD-Drinking-Water-Quality-Report-FINAL1.pdf",

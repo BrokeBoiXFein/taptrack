@@ -1,0 +1,418 @@
+<title>TapTrack</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: one narrow reading column; a dark aquifer band under the district name; contaminant rows read like a well log */
+:root {
+  --ground: #F2F5F4;
+  --surface: #FFFFFF;
+  --ink: #13272C;
+  --muted: #3F5559;
+  --rule: #C9D4D5;
+  --line: #9DB0B2;
+  --aquifer: #1E5A6E;
+  --band: #13272C;
+  --band-ink: #F2F5F4;
+  --band-muted: #A9C3C7;
+  --sand: #C9B98F;
+  --magothy: #2A6A7E;
+  --lloyd: #1B4757;
+  --clay: #6B5B45;
+  --topsoil: #4E6B5C;
+  --good: #2E6E52;
+  --watch: #8A5A0E;
+  --over: #B4372A;
+  --focus: #E0A100;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "Atkinson Hyperlegible", "Verdana", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #0F1E22; --surface: #162A2F; --ink: #E6EEEE; --muted: #A3B8BB; --rule: #2C4248;
+    --line: #4A6469; --aquifer: #6FB3C7; --band: #08161A; --band-ink: #E6EEEE; --band-muted: #93AFB4;
+    --good: #6CC49A; --watch: #E2B254; --over: #F08A7C; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ground: #0F1E22; --surface: #162A2F; --ink: #E6EEEE; --muted: #A3B8BB; --rule: #2C4248;
+  --line: #4A6469; --aquifer: #6FB3C7; --band: #08161A; --band-ink: #E6EEEE; --band-muted: #93AFB4;
+  --good: #6CC49A; --watch: #E2B254; --over: #F08A7C; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--ground); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; }
+a { color: var(--aquifer); }
+a:hover { color: var(--ink); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.wrap { max-width: 640px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; letter-spacing: -0.015em; margin: 0; }
+.num { font-variant-numeric: tabular-nums; }
+
+.top { padding-block: 18px 14px; display: flex; flex-direction: column; gap: 12px; }
+.brand { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand b { font-family: var(--display); font-size: 24px; }
+.brand span { color: var(--muted); font-size: 14px; }
+.find label { display: block; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+input[type="text"], select { flex: 1 1 220px; min-width: 0; height: 48px; padding: 0 14px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; }
+button, .btn { height: 48px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--aquifer); color: var(--ground); font: inherit; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+button.quiet { background: transparent; color: var(--aquifer); border: 1.5px solid var(--line); }
+.msg { font-size: 14px; color: var(--muted); min-height: 1.5em; margin: 6px 0 0; }
+.msg.err { color: var(--over); }
+
+.band { background: var(--band); color: var(--band-ink); }
+.band .wrap { padding-block: 22px 0; }
+.band small { color: var(--band-muted); font-size: 14px; display: block; }
+.band h1 { font-size: clamp(30px, 8vw, 44px); line-height: 1.02; margin: 4px 0 6px; }
+.strata { display: block; width: 100%; height: auto; margin-top: 16px; }
+
+.verdict { font-family: var(--display); font-weight: 500; font-size: 22px; line-height: 1.22; margin: 22px 0 8px; text-wrap: pretty; }
+.basis { font-size: 14px; color: var(--muted); margin: 0 0 6px; }
+
+.log { list-style: none; margin: 8px 0 0; padding: 0; }
+.log li + li { border-top: 1px solid var(--rule); }
+.log button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr) 76px 76px; align-items: center; gap: 12px; width: 100%; padding: 16px 0; cursor: pointer; }
+.log button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.log .name { font-weight: 700; display: block; }
+.log .say { font-size: 14px; display: block; }
+.log .val { text-align: right; }
+.log .val strong { font-size: 20px; display: block; line-height: 1.1; }
+.log .val em { font-style: normal; font-size: 12px; color: var(--muted); }
+.good { color: var(--good); } .watch { color: var(--watch); } .over { color: var(--over); } .quietc { color: var(--muted); }
+
+.actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0 0; }
+.actions > * { flex: 1 1 200px; }
+
+.foot { margin-top: 28px; padding-block: 18px 32px; border-top: 1px solid var(--rule); font-size: 14px; color: var(--muted); display: flex; flex-direction: column; gap: 8px; }
+
+.back { all: unset; cursor: pointer; color: var(--aquifer); font-size: 15px; padding: 12px 0; display: inline-block; text-decoration: underline; }
+.detail h1 { font-size: clamp(30px, 8vw, 40px); line-height: 1.05; }
+.lede { font-family: var(--display); font-weight: 500; font-size: 20px; line-height: 1.25; margin: 8px 0 0; text-wrap: pretty; }
+.chart { margin: 18px 0 4px; overflow-x: auto; }
+.chart svg { display: block; width: 100%; min-width: 320px; height: auto; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 22px; height: 0; border-top: 2px dashed var(--over); vertical-align: middle; margin-right: 6px; }
+.legend i.fed { border-top: 2px dotted var(--watch); }
+.legend i.series { border-top: 3px solid var(--aquifer); }
+.legend i.series2 { border-top: 3px solid var(--watch); }
+section { margin-top: 26px; }
+section h2 { font-size: 20px; margin-bottom: 8px; }
+section p { margin: 0 0 10px; max-width: 65ch; }
+.steps { list-style: none; margin: 0; padding: 0; }
+.steps li { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-top: 1px solid var(--rule); }
+.steps li:last-child { border-bottom: 1px solid var(--rule); }
+.steps b { font-variant-numeric: tabular-nums; }
+.years { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; }
+
+fieldset { border: 0; margin: 18px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+legend { font-weight: 700; margin-bottom: 8px; }
+.pick { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 14px; background: var(--surface); border: 1.5px solid var(--line); border-radius: 10px; cursor: pointer; }
+.pick:has(input:checked) { border-color: var(--aquifer); }
+.pick input { width: 20px; height: 20px; accent-color: var(--aquifer); }
+.pick span:first-of-type { flex: 1; }
+.pick small { font-size: 13px; color: var(--muted); }
+.answer { margin-top: 20px; padding: 20px; border-radius: 14px; background: var(--band); color: var(--band-ink); }
+.answer small { color: var(--band-muted); display: block; font-size: 14px; }
+.answer h2 { font-size: 26px; line-height: 1.1; margin: 6px 0 8px; }
+.tablebox { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th { text-align: left; padding: 10px 8px 10px 0; border-bottom: 2px solid var(--ink); }
+td { padding: 11px 8px 11px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.notes { margin: 0; padding-left: 20px; }
+.notes li { margin-bottom: 8px; max-width: 65ch; }
+.other { list-style: none; margin: 0; padding: 0; columns: 2 220px; font-size: 14px; }
+.other li { break-inside: avoid; padding: 4px 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .chart polyline.series { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw 900ms ease-out forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+}
+</style>
+
+<div id="app"></div>
+
+<script id="water-data" type="application/json">{"meta": {"app": "TapTrack", "updated": "2026-10-20", "valueRule": "Each yearly value is the highest result the district reported for that year (its worst well or entry point), copied from the district's Annual Drinking Water Quality Report. It is not what every home receives.", "transcriptionNote": "Values were transcribed from the district PDFs. Spot-check each against the linked report before the final submission."}, "contaminants": {"dioxane": {"name": "1,4-Dioxane", "unit": "µg/L (ppb)", "nyLimit": 1, "fedLimit": null, "fedNote": "No federal limit. New York set the first state limit in the US in 2020.", "what": "An industrial solvent that also shows up as a byproduct in some soaps, shampoos and detergents. It moves easily through Long Island's sandy soil into the aquifer.", "why": "EPA classifies it as a likely human carcinogen with long-term exposure. The concern is decades of drinking it, not a single glass.", "fix": "Most home filters do not remove it well, including standard carbon pitchers. The main fix is the district's Advanced Oxidation Process (AOP) treatment at the well.", "filter": "Few home filters are certified for 1,4-dioxane. Check a filter's NSF listing for this chemical by name before buying."}, "pfoa": {"name": "PFOA (a PFAS \"forever chemical\")", "unit": "ng/L (ppt)", "nyLimit": 10, "fedLimit": 4, "fedNote": "EPA set a 4 ppt limit in 2024. In May 2026 EPA proposed letting systems take until April 2031 to comply.", "what": "A man-made chemical once used in non-stick pans, stain-resistant fabric and firefighting foam. It does not break down in the environment.", "why": "Long-term exposure is linked to some cancers, thyroid and immune effects, and higher cholesterol.", "fix": "Districts remove it with granular activated carbon (GAC) or ion exchange at the well.", "filter": "Look for NSF/ANSI 53 or 58 certification that lists PFOA. Under-sink reverse osmosis and certified carbon block filters work best."}, "pfos": {"name": "PFOS (a PFAS \"forever chemical\")", "unit": "ng/L (ppt)", "nyLimit": 10, "fedLimit": 4, "fedNote": "EPA set a 4 ppt limit in 2024. In May 2026 EPA proposed letting systems take until April 2031 to comply.", "what": "A PFAS chemical once used in Scotchgard-type coatings and firefighting foam.", "why": "Long-term exposure is linked to immune, thyroid and developmental effects.", "fix": "Same treatment as PFOA: granular activated carbon (GAC) or ion exchange at the well.", "filter": "Look for NSF/ANSI 53 or 58 certification that lists PFOS."}, "nitrate": {"name": "Nitrate", "unit": "mg/L (ppm)", "nyLimit": 10, "fedLimit": 10, "fedNote": "Same 10 mg/L limit at the state and federal level.", "what": "Comes mostly from lawn fertilizer and septic or cesspool systems seeping into groundwater.", "why": "The main risk is to babies under six months, whose blood can carry less oxygen at high levels. Above half the limit, reports must include an infant warning.", "fix": "Districts treat it with ion exchange or blend water from cleaner wells.", "filter": "Carbon filters do not remove nitrate. Reverse osmosis certified to NSF/ANSI 58 for nitrate does."}, "lead": {"name": "Lead (90th percentile at homes)", "unit": "µg/L (ppb)", "nyLimit": 15, "fedLimit": 15, "fedNote": "15 ppb is an action level, not a limit. EPA's 2024 lead rule lowers it to 10 ppb starting in 2027. The health goal is zero.", "what": "Lead comes from old pipes and plumbing inside homes and service lines, not usually from the wells. Testing is done at taps in homes.", "why": "No safe level for children. It can affect learning and development.", "fix": "Districts add chemicals so pipes corrode less. Replacing lead service lines is the permanent fix.", "filter": "NSF/ANSI 53 filters certified for lead work, including many pitchers. Run the cold tap 30 seconds to 2 minutes if water sat overnight."}}, "districts": [{"id": "jericho", "pwsid": "NY2902831", "name": "Jericho Water District", "population": 58000, "wells": "25 wells at 15 sites (24 Magothy aquifer, 1 Lloyd aquifer)", "reportsPage": "https://www.jerichowater.org/whats-happening/annual-water-quality-report/", "phone": "(516) 921-8280", "hasTrend": true, "series": {"dioxane": {"2018": 9.6, "2019": 7.4, "2020": 9.1, "2021": 9.6, "2022": 10.9, "2023": 4.9, "2024": 0.65, "2025": 0.78}, "pfoa": {"2019": 7.09, "2020": 7.7, "2021": 9.2, "2022": 7.9, "2023": 9.5, "2024": 12, "2025": 3.14}, "pfos": {"2021": 3, "2022": 2.0, "2023": 3}, "nitrate": {"2018": 5.6, "2019": 7.2, "2020": 8.9, "2021": 9, "2022": 10.0, "2023": 6.2, "2024": 5.1, "2025": 6.4}, "lead": {"2016": 5.69, "2019": 0, "2022": 1.4, "2023": 1.2, "2024": 2.3, "2025": 1.7}}, "timeline": [{"date": "2020", "text": "1,4-dioxane found above New York's new 1 µg/L limit. State grants a deferral in November while treatment is built."}, {"date": "2022", "text": "Deferral renewed. AOP treatment under construction at seven wells."}, {"date": "2023", "text": "Twelve-month exemption granted. Highest 1,4-dioxane result 4.9 µg/L."}, {"date": "2024", "text": "AOP plants at Merry Lane and Kirby Lane start operating. Highest 1,4-dioxane result falls to 0.65 µg/L."}, {"date": "2025", "text": "Wells 20 and 21 AOP nearly complete. Well 22 expected online for the 2026 pumping season."}], "notes": ["The 2025 report's table lists PFOA in µg/L, but the value matches earlier years only if it is ng/L. TapTrack treats it as ng/L.", "The 2025 report lists one nitrate result of 36.7 mg/L, more than three times the limit, while marking no violation. TapTrack uses the 6.4 mg/L nitrate-nitrite figure the report discusses. Ask the district to confirm.", "The 2024 report flags a PFOA violation in its table but says no violations occurred. The text describes missed quarterly PFOA sampling (a monitoring violation)."], "reports": {"2025": "https://www.jerichowater.org/wp-content/uploads/2026/05/JWD_2025_ADWQR.pdf", "2024": "https://www.jerichowater.org/wp-content/uploads/2025/05/JWD_2024_ADWQR.pdf", "2023": "https://www.jerichowater.org/wp-content/uploads/2024/05/Jericho-WD-2023-ADWQR.pdf", "2022": "https://www.jerichowater.org/wp-content/uploads/2023/05/Jericho-WD-2022-ADWQR.pdf", "2021": "https://www.jerichowater.org/wp-content/uploads/2022/05/Jericho-WD-2021-ADWQR.pdf", "2020": "https://www.jerichowater.org/wp-content/uploads/2021/04/16029_JerichoWD_WaterReport_2021_Interactive.pdf", "2019": "https://www.jerichowater.org/wp-content/uploads/2020/05/Jericho-Water-District-ADWQR-2019.pdf", "2018": "https://www.jerichowater.org/wp-content/uploads/2019/05/jerichowaterawqr-2018.pdf"}}, {"id": "plainview", "pwsid": "NY2902845", "name": "Plainview Water District", "population": 34000, "wells": "12 wells", "reportsPage": "https://plainviewwater.org/news/water-quality-reports/", "hasTrend": true, "series": {"dioxane": {"2019": 11.0, "2020": 10.6, "2021": 0.56, "2022": 0.81, "2023": 0.88, "2024": 1.4, "2025": 0.61}, "pfoa": {"2019": 2.1, "2020": 6.4, "2023": 4.9, "2024": 4.3, "2025": 3.27}, "pfos": {"2020": 2.0, "2023": 2.5, "2024": 3.7}, "nitrate": {"2019": 7.7, "2020": 9.8, "2021": 9.4, "2022": 8.8, "2023": 7.1, "2024": 7.1, "2025": 8.4}, "lead": {"2017": 1.3, "2020": 0, "2023": 0}}, "timeline": [{"date": "2020", "text": "One well tests above New York's new 1,4-dioxane limit, and missed follow-up sampling is reported as a monitoring violation."}, {"date": "2021", "text": "Wells with high levels are taken out of service until treatment runs. Highest result drops to 0.56 µg/L."}, {"date": "2023", "text": "AOP treatment running at Plants 1, 2, 3 and 7. Six wellhead systems online for 1,4-dioxane and PFAS."}, {"date": "2024", "text": "One sample hits 1.4 µg/L, but the resample is non-detect and the average is 0.7, so no violation."}, {"date": "2025", "text": "Nitrate ion exchange system completed at Plant 4. Permanent AOP/GAC at Plant 5 under construction."}], "notes": ["The 2021 and 2022 reports describe PFOA and PFOS standards but give no measured values, so those years are blank in the chart.", "Lead results come from home tap sampling every three years. The 90th percentile was non-detect in 2020 and 2023."], "reports": {"2025": "https://plainviewwater.org/wp-content/uploads/2026/05/26.04.21-2025-PLWD-Drinking-Water-Quality-Report-FINAL1.pdf", "2024": "https://plainviewwater.org/wp-content/uploads/2025/05/25.05.27-2024-PLWD-Drinking-Water-Quality-Report-FINAL3.pdf", "2023": "https://plainviewwater.org/wp-content/uploads/2024/05/2023-PLWD-Drinking-Water-Quality-Report-NCHD-Approved-Version.pdf", "2022": "https://plainviewwater.org/wp-content/uploads/2023/05/2022-PLWD-Drinking-Water-Quality-Report.pdf", "2021": "https://plainviewwater.org/wp-content/uploads/2022/04/22.04.27-2021-PLWD-Drinking-Water-Quality-Report-FINAL1-3.pdf", "2020": "https://plainviewwater.org/wp-content/uploads/2021/05/PWD-2020-Water-Quality-Statement-1.pdf", "2019": "https://plainviewwater.org/wp-content/uploads/2020/05/PWD-2019-Water-Quality-Statement.pdf"}}], "otherDistricts": [{"pwsid": "NY2902829", "name": "Hicksville Water District", "population": 48000, "reportsPage": "https://hicksvillewater.org/hwd/water-quality-report/"}, {"pwsid": "NY2902817", "name": "Bethpage Water District", "population": 33000}, {"pwsid": "NY2902844", "name": "Oyster Bay Water District", "population": 8700}, {"pwsid": "NY2902826", "name": "City of Glen Cove", "population": 28000}, {"pwsid": "NY2902833", "name": "Locust Valley Water District", "population": 7500}, {"pwsid": "NY2902816", "name": "Village of Bayville", "population": 6700}, {"pwsid": "NY2902853", "name": "Liberty Utilities - Sea Cliff", "population": 13400}, {"pwsid": "NY2902851", "name": "Roslyn Water District", "population": 17000}, {"pwsid": "NY2912267", "name": "Port Washington Water District", "population": 34000}, {"pwsid": "NY2902841", "name": "Water Authority of Great Neck North", "population": 31400}, {"pwsid": "NY2902836", "name": "Manhasset-Lakeville Water District", "population": 43000}, {"pwsid": "NY2902815", "name": "Albertson Water District", "population": 13500}, {"pwsid": "NY2902818", "name": "Carle Place Water District", "population": 9005}, {"pwsid": "NY2902856", "name": "Westbury Water District", "population": 20500}, {"pwsid": "NY2902837", "name": "Massapequa Water District", "population": 43000}, {"pwsid": "NY2902854", "name": "South Farmingdale Water District", "population": 44700}]}</script>
+<script>
+(function () {
+  "use strict";
+  var D = JSON.parse(document.getElementById("water-data").textContent);
+  var C = D.contaminants;
+  var ORDER = ["dioxane", "nitrate", "pfoa", "pfos", "lead"];
+  var SHORT = { dioxane: "1,4-Dioxane", nitrate: "Nitrate", pfoa: "PFOA", pfos: "PFOS", lead: "Lead at home taps" };
+  var UNIT = { dioxane: "µg/L", nitrate: "mg/L", pfoa: "ppt", pfos: "ppt", lead: "µg/L" };
+  var app = document.getElementById("app");
+  var state = { view: "home", district: null, key: null, compareKey: "dioxane", msg: "", msgErr: false, concerns: { nitrate: false, pfas: true, lead: false, dioxane: false, baby: false } };
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function byId(id) { for (var i = 0; i < D.districts.length; i++) if (D.districts[i].id === id) return D.districts[i]; return null; }
+  function byPws(p) { for (var i = 0; i < D.districts.length; i++) if (D.districts[i].pwsid === p) return D.districts[i]; return null; }
+  function other(p) { for (var i = 0; i < D.otherDistricts.length; i++) if (D.otherDistricts[i].pwsid === p) return D.otherDistricts[i]; return null; }
+  function years(s) { return Object.keys(s || {}).sort(); }
+  function fmt(v) { return v === 0 ? "ND" : String(v); }
+  function save() { try { localStorage.setItem("taptrack", JSON.stringify({ d: state.district })); } catch (e) {} }
+  function load() { try { var s = JSON.parse(localStorage.getItem("taptrack") || "{}"); return s.d || null; } catch (e) { return null; } }
+
+  // Status of the latest value against the New York limit, then the federal one.
+  function status(key, d) {
+    var s = d.series[key], ys = years(s), c = C[key];
+    if (!ys.length) return { tone: "quietc", say: "No results in these reports", latest: null };
+    var y = ys[ys.length - 1], v = s[y], latestReport = years(d.reports).pop();
+    var peakY = ys[0]; ys.forEach(function (k) { if (s[k] > s[peakY]) peakY = k; });
+    var peak = s[peakY];
+    if (y < latestReport && key !== "lead") return { tone: "quietc", say: "Not in the " + (+y + 1 === +latestReport ? latestReport + " table" : (+y + 1) + " to " + latestReport + " tables") + ", which usually means not detected. Last found at " + v + " in " + y, latest: { y: y, v: v, stale: true } };
+    var out = { latest: { y: y, v: v } }, wasHigh = peak > c.nyLimit && peakY !== y;
+    if (v > c.nyLimit) { out.tone = "over"; out.say = "Above New York's limit of " + c.nyLimit; }
+    else if (key === "lead") { out.tone = v > 10 ? "watch" : "good"; out.say = (v === 0 ? "Not detected at the 90th percentile" : "Under the action level of 15") + ". Last tested in " + y; }
+    else if (c.fedLimit && v > c.fedLimit && c.fedLimit < c.nyLimit) { out.tone = "watch"; out.say = "Under NY's " + c.nyLimit + ", above EPA's coming " + c.fedLimit; }
+    else if (v >= c.nyLimit / 2) { out.tone = "watch"; out.say = "Under the limit of " + c.nyLimit + ", but over half of it" + (key === "nitrate" ? ". Infant advisory" : ""); }
+    else { out.tone = "good"; out.say = "Under the limit of " + c.nyLimit + (c.fedLimit && c.fedLimit < c.nyLimit ? " and EPA's coming " + c.fedLimit : ""); }
+    if (wasHigh) out.say += ". Was " + peak + " in " + peakY;
+    return out;
+  }
+
+  function verdict(d) {
+    var parts = [], st = {};
+    ORDER.forEach(function (k) { st[k] = status(k, d); });
+    var dx = d.series.dioxane, dxy = years(dx);
+    if (dxy.length) {
+      var peak = Math.max.apply(null, dxy.map(function (y) { return dx[y]; }));
+      var last = dx[dxy[dxy.length - 1]];
+      if (peak > 1 && last <= 1) { parts.push("1,4-dioxane is back under New York's limit after new treatment."); st.dioxane = { tone: "done" }; }
+      else if (last > 1) { parts.push("1,4-dioxane is above New York's limit."); st.dioxane = { tone: "done" }; }
+    }
+    var watch = ORDER.filter(function (k) { return st[k].tone === "watch" || st[k].tone === "over"; }).map(function (k) { return SHORT[k].toLowerCase(); });
+    if (watch.length) parts.push(watch.join(" and ").replace(/^./, function (c) { return c.toUpperCase(); }) + (watch.length > 1 ? " are" : " is") + " the one" + (watch.length > 1 ? "s" : "") + " to watch.");
+    else parts.push(parts.length ? "Everything else is under the limits." : "Everything tracked here is under the limits.");
+    return parts.join(" ");
+  }
+
+  function spark(s) {
+    var ys = years(s); if (ys.length < 2) return "";
+    var vals = ys.map(function (y) { return s[y]; }), mx = Math.max.apply(null, vals) || 1;
+    var pts = vals.map(function (v, i) { return (i * 72 / (vals.length - 1)).toFixed(1) + "," + (26 - v / mx * 24).toFixed(1); }).join(" ");
+    var last = pts.split(" ").pop().split(",");
+    return '<svg width="72" height="28" viewBox="0 0 72 28" aria-hidden="true"><polyline points="' + pts + '" fill="none" stroke="var(--aquifer)" stroke-width="2" stroke-linejoin="round"/><circle cx="' + last[0] + '" cy="' + last[1] + '" r="3" fill="var(--aquifer)"/></svg>';
+  }
+
+  // Full trend chart. series: [{name, s, color}]
+  function chart(key, series, label) {
+    var c = C[key], W = 360, H = 250, L = 38, R = 14, T = 18, B = 40;
+    var all = {}; series.forEach(function (x) { years(x.s).forEach(function (y) { all[y] = 1; }); });
+    var ys = Object.keys(all).sort(); if (!ys.length) return "<p>No results to chart.</p>";
+    var y0 = +ys[0], y1 = Math.max(+ys[ys.length - 1], y0 + 1);
+    var mx = c.nyLimit; series.forEach(function (x) { years(x.s).forEach(function (y) { if (x.s[y] > mx) mx = x.s[y]; }); });
+    var step = mx > 40 ? 10 : mx > 15 ? 5 : mx > 6 ? 2 : 1; mx = Math.ceil(mx * 1.1 / step) * step;
+    function X(y) { return L + (y - y0) / (y1 - y0) * (W - L - R); }
+    function Y(v) { return T + (1 - v / mx) * (H - T - B); }
+    var g = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + esc(label) + '">';
+    for (var t = 0; t <= mx + 1e-9; t += step) {
+      g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(t).toFixed(1) + '" y2="' + Y(t).toFixed(1) + '" stroke="var(--rule)"/>';
+      g += '<text x="' + (L - 6) + '" y="' + (Y(t) + 4).toFixed(1) + '" font-size="11" text-anchor="end" fill="var(--muted)">' + t + "</text>";
+    }
+    var lab = Math.max(1, Math.ceil((y1 - y0) / 4));
+    for (var yy = y0; yy <= y1; yy += lab) g += '<text x="' + X(yy).toFixed(1) + '" y="' + (H - B + 18) + '" font-size="11" text-anchor="middle" fill="var(--muted)">' + yy + "</text>";
+    g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(c.nyLimit).toFixed(1) + '" y2="' + Y(c.nyLimit).toFixed(1) + '" stroke="var(--over)" stroke-width="2" stroke-dasharray="6 4"/>';
+    if (c.fedLimit && c.fedLimit !== c.nyLimit) g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(c.fedLimit).toFixed(1) + '" y2="' + Y(c.fedLimit).toFixed(1) + '" stroke="var(--watch)" stroke-width="2" stroke-dasharray="2 4"/>';
+    series.forEach(function (x) {
+      var k = years(x.s), pts = k.map(function (y) { return X(+y).toFixed(1) + "," + Y(x.s[y]).toFixed(1); });
+      var len = 0; for (var i = 1; i < k.length; i++) len += Math.hypot(X(+k[i]) - X(+k[i - 1]), Y(x.s[k[i]]) - Y(x.s[k[i - 1]]));
+      if (k.length > 1) g += '<polyline class="series" style="--len:' + Math.ceil(len) + '" points="' + pts.join(" ") + '" fill="none" stroke="' + x.color + '" stroke-width="3" stroke-linejoin="round"/>';
+      k.forEach(function (y, i) {
+        g += '<circle cx="' + X(+y).toFixed(1) + '" cy="' + Y(x.s[y]).toFixed(1) + '" r="4" fill="' + x.color + '"><title>' + esc(x.name + " " + y + ": " + fmt(x.s[y]) + " " + UNIT[key]) + "</title></circle>";
+      });
+      if (series.length === 1) {
+        var pk = k[0]; k.forEach(function (y) { if (x.s[y] > x.s[pk]) pk = y; }); var ls = k[k.length - 1];
+        [pk, ls].filter(function (v, i, a) { return a.indexOf(v) === i; }).forEach(function (y) {
+          var ty = Y(x.s[y]) - 10; if (ty < 12) ty = Y(x.s[y]) + 18;
+          g += '<text x="' + Math.min(Math.max(X(+y), L + 12), W - R - 12).toFixed(1) + '" y="' + ty.toFixed(1) + '" font-size="12" font-weight="700" text-anchor="middle" fill="var(--ink)">' + fmt(x.s[y]) + "</text>";
+        });
+      }
+    });
+    g += '<text x="' + L + '" y="' + (H - 6) + '" font-size="11" fill="var(--muted)">' + esc(c.unit) + ", highest result at any well that year</text>";
+    return g + "</svg>";
+  }
+
+  function strata(d) {
+    var lloyd = /Lloyd/.test(d.wells), txt = d.wells;
+    return '<svg class="strata" viewBox="0 0 640 120" preserveAspectRatio="none" role="img" aria-label="Ground under the district: ' + esc(txt) + '">' +
+      '<rect x="0" y="0" width="640" height="20" fill="var(--topsoil)"/><rect x="0" y="20" width="640" height="30" fill="var(--sand)"/>' +
+      '<rect x="0" y="50" width="640" height="44" fill="var(--magothy)"/><rect x="0" y="94" width="640" height="8" fill="var(--clay)"/><rect x="0" y="102" width="640" height="18" fill="var(--lloyd)"/>' +
+      '<g stroke="#F2F5F4" stroke-width="2">' + [120, 200, 280, 360, 440].map(function (x, i) { return '<line x1="' + x + '" y1="0" x2="' + x + '" y2="' + (76 + (i % 2) * 6) + '"/>'; }).join("") + (lloyd ? '<line x1="540" y1="0" x2="540" y2="114"/>' : "") + "</g></svg>" +
+      '<div class="row" style="justify-content:space-between;font-size:13px;color:var(--band-muted);padding-block:8px 18px"><span>Upper glacial sand, Magothy aquifer' + (lloyd ? ", Lloyd aquifer" : "") + '</span><span>' + esc(txt) + "</span></div>";
+  }
+
+  function districtOptions(sel) {
+    var h = '<option value="">Pick a water district</option><optgroup label="With full history">';
+    D.districts.forEach(function (d) { h += '<option value="' + d.id + '"' + (sel === d.id ? " selected" : "") + ">" + esc(d.name) + "</option>"; });
+    h += '</optgroup><optgroup label="Coming soon">';
+    D.otherDistricts.forEach(function (d) { h += '<option value="pws:' + d.pwsid + '">' + esc(d.name) + "</option>"; });
+    return h + "</optgroup>";
+  }
+
+  function header() {
+    return '<div class="wrap top"><div class="brand"><b>TapTrack</b><span>Long Island tap water, year by year. Free.</span></div>' +
+      '<form class="find" id="find"><label for="addr">Your address</label><div class="row"><input type="text" id="addr" autocomplete="street-address" placeholder="e.g. 1 Jericho Turnpike, Jericho NY"><button type="submit">Find my water</button></div>' +
+      '<label for="pick" style="margin-top:12px">Or pick your district</label><div class="row"><select id="pick">' + districtOptions(state.district) + "</select></div>" +
+      '<p class="msg' + (state.msgErr ? " err" : "") + '" id="msg" role="status">' + esc(state.msg) + "</p></form></div>";
+  }
+
+  function home() {
+    var d = byId(state.district);
+    if (!d) {
+      return header() + '<div class="wrap"><h2 style="font-size:24px;margin-top:8px">See what is in your tap water, and how it has changed.</h2><p class="basis" style="margin-top:10px">Every Long Island water district publishes a yearly report as a PDF. TapTrack reads them and puts the years side by side, with the limits and what the district is doing about it.</p>' +
+        '<div class="actions"><button type="button" data-go="jericho">See Jericho Water District</button><button type="button" class="quiet" data-go="plainview">See Plainview Water District</button></div>' + foot(null) + "</div>";
+    }
+    var rows = ORDER.map(function (k) {
+      var st = status(k, d), lv = st.latest;
+      return '<li><button type="button" data-key="' + k + '" aria-label="' + esc(SHORT[k] + ". " + st.say + ". Open trend") + '"><span><span class="name">' + SHORT[k] + '</span><span class="say ' + st.tone + '">' + esc(st.say) + "</span></span>" +
+        "<span>" + spark(d.series[k]) + '</span><span class="val num"><strong>' + (lv ? (lv.stale ? "ND" : fmt(lv.v)) : "n/a") + "</strong><em>" + UNIT[k] + "</em></span></button></li>";
+    }).join("");
+    var latest = years(d.reports).pop();
+    return header() +
+      '<div class="band"><div class="wrap"><small>Your water comes from</small><h1>' + esc(d.name) + '</h1><small class="num">' + d.population.toLocaleString() + " people. District ID " + d.pwsid + "</small>" + strata(d) + "</div></div>" +
+      '<div class="wrap"><p class="verdict">' + esc(verdict(d)) + '</p><p class="basis">' + latest + " results, the highest the district reported at any well. Tap a row for the full history.</p>" +
+      '<ul class="log">' + rows + "</ul>" +
+      '<div class="actions"><button type="button" data-view="filter">Do I need a filter?</button><button type="button" class="quiet" data-view="compare">Compare with another district</button></div>' +
+      foot(d) + "</div>";
+  }
+
+  function foot(d) {
+    var h = '<div class="foot">';
+    if (d) {
+      var ly = years(d.reports).pop();
+      h += '<div>Source: <a href="' + d.reports[ly] + '" target="_blank" rel="noopener">' + esc(d.name) + " " + ly + ' report</a>. <button type="button" class="back" style="padding:0" data-view="notes">Report errors we found (' + d.notes.length + ")</button></div>";
+    }
+    h += "<div>" + esc(D.meta.valueRule) + " Not medical advice.</div>";
+    h += '<div>District boundaries: <a href="https://www.epa.gov/ground-water-and-drinking-water/community-water-system-service-area-boundaries" target="_blank" rel="noopener">EPA service area map</a>. Limits: New York State Department of Health and EPA.</div></div>';
+    return h;
+  }
+
+  function detail() {
+    var d = byId(state.district), k = state.key, c = C[k], s = d.series[k], st = status(k, d);
+    var ys = years(s);
+    var lede = st.say + ".";
+    var label = "Highest " + c.name + " result by year in " + d.name + ": " + ys.map(function (y) { return y + " " + fmt(s[y]); }).join(", ") + ". New York limit " + c.nyLimit + ".";
+    var tl = (k === "dioxane" || k === "pfoa" || k === "pfos") ? d.timeline : [];
+    return '<div class="wrap detail" style="padding-block:8px 0"><button type="button" class="back" data-view="home">Back to ' + esc(d.name) + "</button>" +
+      "<h1>" + esc(c.name) + '</h1><p class="lede ' + st.tone + '">' + esc(lede) + "</p>" +
+      '<div class="chart">' + chart(k, [{ name: d.name, s: s, color: "var(--aquifer)" }], label) + "</div>" +
+      '<div class="legend"><span><i class="series"></i>' + esc(d.name) + '</span><span><i></i>New York limit ' + c.nyLimit + "</span>" + (c.fedLimit && c.fedLimit !== c.nyLimit ? '<span><i class="fed"></i>' + (k === "lead" ? "EPA level from 2027: " : "EPA limit: ") + c.fedLimit + "</span>" : "") + "</div>" +
+      (tl.length ? '<section><h2>What the district did</h2><ol class="steps">' + tl.map(function (t) { return "<li><b>" + esc(t.date) + "</b><span>" + esc(t.text) + "</span></li>"; }).join("") + "</ol></section>" : "") +
+      "<section><h2>What it is</h2><p>" + esc(c.what) + "</p><h2>Why it matters</h2><p>" + esc(c.why) + "</p><h2>How it gets fixed</h2><p>" + esc(c.fix) + "</p><h2>The limits</h2><p>" + esc(c.fedNote) + "</p></section>" +
+      '<section><h2>Every year, from the source</h2><div class="years">' + years(d.reports).map(function (y) { return '<a href="' + d.reports[y] + '" target="_blank" rel="noopener">' + y + (s[y] !== undefined ? ": " + fmt(s[y]) : ": not listed") + "</a>"; }).join("") + "</div></section>" +
+      foot(d) + "</div>";
+  }
+
+  function filterRec(cn) {
+    var n = cn.nitrate || cn.baby, p = cn.pfas, l = cn.lead;
+    if (!n && !p && !l && !cn.dioxane) return { t: "Pick at least one", b: "Choose what you want to reduce and TapTrack shows the filter type to look for." };
+    if (n) return { t: "Under-sink reverse osmosis", b: "Carbon filters do not remove nitrate. Look for NSF/ANSI 58 certification that lists nitrate" + (p ? " and PFOA/PFOS" : "") + (l ? " and lead" : "") + " by name." };
+    if (p) return { t: "Certified carbon block or reverse osmosis", b: "Look for NSF/ANSI 53 or 58 certification that lists PFOA and PFOS by name" + (l ? ", and lead" : "") + ". An under-sink carbon block costs less than reverse osmosis." };
+    if (l) return { t: "Certified pitcher or faucet filter", b: "Many pitchers are certified to NSF/ANSI 53 for lead. Also run the cold tap 30 seconds to 2 minutes if the water sat overnight." };
+    return { t: "Rely on the district's treatment", b: C.dioxane.filter + " " + C.dioxane.fix };
+  }
+
+  function filter() {
+    var d = byId(state.district), cn = state.concerns, r = filterRec(cn);
+    var st = {}; ORDER.forEach(function (k) { st[k] = status(k, d); });
+    var meets = ORDER.every(function (k) { return st[k].tone !== "over"; });
+    function pick(id, label, note) { return '<label class="pick"><input type="checkbox" data-concern="' + id + '"' + (cn[id] ? " checked" : "") + "><span>" + label + "</span>" + (note ? "<small>" + esc(note) + "</small>" : "") + "</label>"; }
+    return '<div class="wrap detail" style="padding-block:8px 0"><button type="button" class="back" data-view="home">Back to ' + esc(d.name) + "</button><h1>Do I need a filter?</h1>" +
+      '<p class="lede">' + (meets ? "Your water meets New York's limits. A filter is a choice, not a requirement." : "Something in your water is above New York's limit. Check the district's notice for what to do now.") + "</p>" +
+      "<fieldset><legend>I want to reduce</legend>" +
+      pick("pfas", "PFAS (PFOA, PFOS)", st.pfoa.latest ? "Latest " + fmt(st.pfoa.latest.v) + " ppt" : "") +
+      pick("nitrate", "Nitrate", st.nitrate.latest ? "Latest " + fmt(st.nitrate.latest.v) + " mg/L" : "") +
+      pick("baby", "Nitrate, I have a baby under 6 months", "") +
+      pick("lead", "Lead from old pipes", "") +
+      pick("dioxane", "1,4-Dioxane", "") + "</fieldset>" +
+      '<div class="answer" aria-live="polite"><small>Look for</small><h2>' + esc(r.t) + "</h2><div>" + esc(r.b) + "</div></div>" +
+      '<section><h2>What each filter type removes</h2><div class="tablebox"><table><thead><tr><th>Filter</th><th>Nitrate</th><th>PFAS</th><th>Lead</th><th>1,4-Dioxane</th></tr></thead><tbody>' +
+      "<tr><td>Pitcher, carbon</td><td>No</td><td>Some, if NSF 53 lists it</td><td>Yes, if NSF 53</td><td>No</td></tr>" +
+      "<tr><td>Carbon block, under sink</td><td>No</td><td>Yes, if NSF 53</td><td>Yes, if NSF 53</td><td>Limited</td></tr>" +
+      "<tr><td>Reverse osmosis</td><td>Yes, if NSF 58</td><td>Yes, if NSF 58</td><td>Yes, if NSF 58</td><td>Partial</td></tr>" +
+      '</tbody></table></div><p style="margin-top:12px;font-size:14px;color:var(--muted)">Check a model on <a href="https://info.nsf.org/Certified/DWTU/" target="_blank" rel="noopener">NSF\'s certified product list</a>. TapTrack has no ads and no affiliate links.</p></section>' +
+      foot(d) + "</div>";
+  }
+
+  function compare() {
+    var a = D.districts[0], b = D.districts[1], k = state.compareKey, c = C[k];
+    var tabs = ORDER.filter(function (x) { return x !== "lead"; }).map(function (x) { return '<button type="button" class="' + (x === k ? "" : "quiet") + '" data-ck="' + x + '" aria-pressed="' + (x === k) + '">' + SHORT[x] + "</button>"; }).join("");
+    var label = c.name + " by year. " + a.name + ": " + years(a.series[k]).map(function (y) { return y + " " + fmt(a.series[k][y]); }).join(", ") + ". " + b.name + ": " + years(b.series[k]).map(function (y) { return y + " " + fmt(b.series[k][y]); }).join(", ") + ".";
+    return '<div class="wrap detail" style="padding-block:8px 0"><button type="button" class="back" data-view="home">Back</button><h1>Compare districts</h1>' +
+      '<p class="lede">Two neighbors, same aquifer, different paths.</p><div class="actions" role="group" aria-label="Contaminant">' + tabs + "</div>" +
+      '<div class="chart">' + chart(k, [{ name: a.name, s: a.series[k], color: "var(--aquifer)" }, { name: b.name, s: b.series[k], color: "var(--watch)" }], label) + "</div>" +
+      '<div class="legend"><span><i class="series"></i>' + esc(a.name) + '</span><span><i class="series2"></i>' + esc(b.name) + '</span><span><i></i>New York limit ' + c.nyLimit + "</span></div>" +
+      '<section><h2>Latest results</h2><div class="tablebox"><table><thead><tr><th>Contaminant</th><th>' + esc(a.name) + "</th><th>" + esc(b.name) + "</th></tr></thead><tbody>" +
+      ORDER.map(function (x) { var sa = status(x, a), sb = status(x, b); return "<tr><td>" + SHORT[x] + ' (' + UNIT[x] + ')</td><td class="num ' + sa.tone + '">' + (sa.latest ? (sa.latest.stale ? "ND" : fmt(sa.latest.v)) : "n/a") + '</td><td class="num ' + sb.tone + '">' + (sb.latest ? (sb.latest.stale ? "ND" : fmt(sb.latest.v)) : "n/a") + "</td></tr>"; }).join("") +
+      "</tbody></table></div></section>" + foot(null) + "</div>";
+  }
+
+  function notes() {
+    var d = byId(state.district);
+    return '<div class="wrap detail" style="padding-block:8px 0"><button type="button" class="back" data-view="home">Back to ' + esc(d.name) + "</button><h1>Report errors we found</h1>" +
+      '<p class="lede">Reading every year side by side shows mistakes a single report hides. Ask the district about these.</p><section><ul class="notes">' + d.notes.map(function (n) { return "<li>" + esc(n) + "</li>"; }).join("") + "</ul></section>" +
+      "<section><h2>Contact the district</h2><p>" + (d.phone ? 'Call <span class="num" style="user-select:all">' + esc(d.phone) + "</span> or see " : "See ") + '<a href="' + d.reportsPage + '" target="_blank" rel="noopener">its reports page</a>.</p></section>' +
+      "<section><h2>Other NY-03 districts</h2><p>Full history for these is coming next. Their reports are public now.</p><ul class=\"other\">" +
+      D.otherDistricts.map(function (o) { return "<li>" + (o.reportsPage ? '<a href="' + o.reportsPage + '" target="_blank" rel="noopener">' + esc(o.name) + "</a>" : esc(o.name)) + ' <span class="num quietc">' + o.population.toLocaleString() + "</span></li>"; }).join("") + "</ul></section>" + foot(d) + "</div>";
+  }
+
+  function render() {
+    var v = state.view;
+    if (v !== "home" && v !== "compare" && !byId(state.district)) v = "home";
+    app.innerHTML = v === "detail" ? detail() : v === "filter" ? filter() : v === "compare" ? compare() : v === "notes" ? notes() : home();
+  }
+  function go(view, extra) { state.view = view; for (var k in extra || {}) state[k] = extra[k]; render(); window.scrollTo(0, 0); }
+  function setMsg(m, err) { state.msg = m; state.msgErr = !!err; var el = document.getElementById("msg"); if (el) { el.textContent = m; el.className = "msg" + (err ? " err" : ""); } }
+  function choose(val) {
+    if (!val) return;
+    if (val.indexOf("pws:") === 0) {
+      var o = other(val.slice(4));
+      state.district = null; save();
+      go("home", { msg: o ? o.name + " is not added yet. Its full history is coming next. Try Jericho or Plainview to see how TapTrack works." : "", msgErr: false });
+      return;
+    }
+    state.district = val; save(); go("home", { msg: "", msgErr: false });
+  }
+
+  // Address to district: geocode with OpenStreetMap, then ask EPA's boundary map which system covers that point.
+  function findAddress(q) {
+    setMsg("Looking up " + q + "…");
+    var geo = "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q=" + encodeURIComponent(q);
+    fetch(geo, { headers: { "Accept": "application/json" } })
+      .then(function (r) { if (!r.ok) throw new Error("geo"); return r.json(); })
+      .then(function (g) {
+        if (!g.length) throw new Error("none");
+        var url = "https://services.arcgis.com/cJ9YHowT8TU7DUyn/arcgis/rest/services/Water_System_Boundaries/FeatureServer/0/query?f=json&returnGeometry=false&outFields=PWSID,PWS_Name&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&geometry=" + g[0].lon + "," + g[0].lat;
+        return fetch(url).then(function (r) { return r.json(); });
+      })
+      .then(function (res) {
+        var f = (res.features || []).map(function (x) { return x.attributes; });
+        if (!f.length) { setMsg("That address is outside the water districts TapTrack knows. Pick your district from the list.", true); return; }
+        var hit = null; f.forEach(function (a) { if (!hit && byPws(a.PWSID)) hit = byPws(a.PWSID); });
+        if (hit) { state.district = hit.id; save(); go("home", { msg: "Found: " + hit.name + ".", msgErr: false }); return; }
+        setMsg("Your water comes from " + f[0].PWS_Name + " (" + f[0].PWSID + "). Its full history is coming next. Pick Jericho or Plainview to see how TapTrack works.", false);
+      })
+      .catch(function (e) {
+        setMsg(e.message === "none" ? "No match for that address. Add the town and NY, or pick your district from the list." : "Address search can't reach the map right now. Pick your district from the list.", true);
+      });
+  }
+
+  app.addEventListener("submit", function (e) { if (e.target.id === "find") { e.preventDefault(); var q = document.getElementById("addr").value.trim(); if (q) findAddress(q); else setMsg("Type an address first, or pick your district.", true); } });
+  app.addEventListener("change", function (e) {
+    var t = e.target;
+    if (t.id === "pick") choose(t.value);
+    if (t.dataset && t.dataset.concern) { state.concerns[t.dataset.concern] = t.checked; render(); var el = app.querySelector('[data-concern="' + t.dataset.concern + '"]'); if (el) el.focus(); }
+  });
+  app.addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b || !app.contains(b)) return;
+    if (b.dataset.go) choose(b.dataset.go);
+    else if (b.dataset.key) go("detail", { key: b.dataset.key });
+    else if (b.dataset.view) go(b.dataset.view);
+    else if (b.dataset.ck) { state.compareKey = b.dataset.ck; render(); var f = app.querySelector('[data-ck="' + b.dataset.ck + '"]'); if (f) f.focus(); }
+  });
+
+  var h = (location.hash || "").slice(1);
+  state.district = byId(h) ? h : load();
+  render();
+})();
+</script>

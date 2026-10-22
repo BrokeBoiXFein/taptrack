@@ -41,7 +41,7 @@ Known report errors (already in `notes`): Jericho 2025 prints PFOA in µg/L, lis
 
 ## Design
 
-Mobile-first, one reading column. Display face Bricolage Grotesque, body Atkinson Hyperlegible (chosen for readability, including older residents). Palette tokens in `:root` with light and dark themes: mineral ground, deep groundwater ink, aquifer blue accent, sand and clay strata colors. Status colors: good, watch, over. The signature element is the aquifer cross-section (Upper glacial, Magothy, Lloyd), now in its own section at the end of the district page with a plain explanation of each layer. Keep it. District page order (Ayaan's choice): name, map, year slider, the data, aquifer breakdown. No emoji, no gradient washes, no single made-up score.
+Mobile-first, one reading column. Professional look (Ayaan's choice): white pages, dark navy blue bands, buttons and text. Calibri for nearly everything (Carlito, its free metric twin, loads where Calibri is missing); Arial for small text like labels, status lines, chips and footnotes. Palette tokens in `:root`, light only. Sand and clay strata colors stay for the aquifer picture. Status colors: good, watch, over. The signature element is the aquifer cross-section (Upper glacial, Magothy, Lloyd), now in its own section at the end of the district page with a plain explanation of each layer. Keep it. District page order (Ayaan's choice): name, map, year slider, the data, aquifer breakdown. No emoji, no gradient washes, no single made-up score.
 
 Copy rules: plain words, short sentences, active voice. Name things the way a resident would.
 

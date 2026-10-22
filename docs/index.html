@@ -4,54 +4,50 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<!-- Calibri on Windows; Carlito (same letter widths as Calibri) everywhere else -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
 <!-- Leaflet draws the district map. If it fails to load, the app still works without the map. -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
-/* Layout: one narrow reading column; a dark aquifer band under the district name; contaminant rows read like a well log */
+/* Layout: one narrow reading column on white; dark navy bands for the district name and the aquifer section */
 :root {
-  --ground: #F2F5F4;
-  --surface: #FFFFFF;
-  --ink: #13272C;
-  --muted: #3F5559;
-  --rule: #C9D4D5;
-  --line: #9DB0B2;
-  --aquifer: #1E5A6E;
-  --band: #13272C;
-  --band-ink: #F2F5F4;
-  --band-muted: #A9C3C7;
+  color-scheme: light;
+  --ground: #FFFFFF;
+  --surface: #F3F6FA;
+  --ink: #0B1F3A;
+  --muted: #475569;
+  --rule: #DCE3EC;
+  --line: #B4C0D0;
+  --aquifer: #0B3D91;
+  --band: #0B2545;
+  --band-ink: #FFFFFF;
+  --band-muted: #B8C7DC;
   --sand: #C9B98F;
-  --magothy: #2A6A7E;
-  --lloyd: #1B4757;
+  --magothy: #2A6A9E;
+  --lloyd: #16406B;
   --clay: #6B5B45;
   --topsoil: #4E6B5C;
-  --good: #2E6E52;
-  --watch: #8A5A0E;
-  --over: #B4372A;
-  --focus: #E0A100;
-  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
-  --body: "Atkinson Hyperlegible", "Verdana", system-ui, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --ground: #0F1E22; --surface: #162A2F; --ink: #E6EEEE; --muted: #A3B8BB; --rule: #2C4248;
-    --line: #4A6469; --aquifer: #6FB3C7; --band: #08161A; --band-ink: #E6EEEE; --band-muted: #93AFB4;
-    --good: #6CC49A; --watch: #E2B254; --over: #F08A7C; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --ground: #0F1E22; --surface: #162A2F; --ink: #E6EEEE; --muted: #A3B8BB; --rule: #2C4248;
-  --line: #4A6469; --aquifer: #6FB3C7; --band: #08161A; --band-ink: #E6EEEE; --band-muted: #93AFB4;
-  --good: #6CC49A; --watch: #E2B254; --over: #F08A7C; color-scheme: dark;
+  --good: #1E7A46;
+  --watch: #A15C00;
+  --over: #B42318;
+  --focus: #F2B705;
+  --display: Calibri, Carlito, "Segoe UI", sans-serif;
+  --body: Calibri, Carlito, "Segoe UI", sans-serif;
+  --small: Arial, Helvetica, "Liberation Sans", sans-serif;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; }
+body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.5; }
+/* Arial for small text: labels, captions, status lines, chips, footnotes */
+.brand span, .find label, .msg, .band small, .basis, .log .say, .log .val em, .legend, .yc-ticks, .yc-top label, .glass-key, .terms-q,
+button.term, button.chip, button.yb, .def, .foot, table, .map-legend, .ranking .say, .pick small, .other, .layers dd, .strata + .row,
+.addr-list small, .leaflet-tooltip, .log .tip, .back { font-family: var(--small); }
 a { color: var(--aquifer); }
 a:hover { color: var(--ink); }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .wrap { max-width: 640px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-h1, h2, h3 { font-family: var(--display); text-wrap: balance; letter-spacing: -0.015em; margin: 0; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; text-wrap: balance; letter-spacing: -0.005em; margin: 0; }
+.top { border-bottom: 1px solid var(--rule); }
 .num { font-variant-numeric: tabular-nums; }
 
 .top { padding-block: 18px 14px; display: flex; flex-direction: column; gap: 12px; }
@@ -79,7 +75,7 @@ button.quiet { background: transparent; color: var(--aquifer); border: 1.5px sol
 .layers > div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 12px; align-items: baseline; }
 .layers dt { font-weight: 700; display: flex; align-items: center; gap: 8px; }
 .layers dt i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; flex: none; box-shadow: 0 0 0 1px var(--band-muted); }
-.layers dd { margin: 0; color: var(--band-muted); }
+.layers dd { margin: 0; color: var(--band-muted); font-size: 15px; }
 @media (max-width: 420px) { .layers > div { grid-template-columns: 1fr; gap: 2px; } }
 
 .verdict { font-family: var(--display); font-weight: 500; font-size: 22px; line-height: 1.22; margin: 22px 0 8px; text-wrap: pretty; }
@@ -217,8 +213,6 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
 .map-note { margin-top: 8px; }
 .leaflet-container { font-family: var(--body); }
 .leaflet-tooltip { font-family: var(--body); font-size: 14px; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9); } }
-:root[data-theme="dark"] .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9); }
 @media (prefers-reduced-motion: reduce) { .glass .fill { transition: none; } }
 @media (prefers-reduced-motion: no-preference) {
   .chart polyline.series { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw 900ms ease-out forwards; }

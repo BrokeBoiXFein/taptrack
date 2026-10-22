@@ -27,4 +27,4 @@ Calm, plain, trustworthy. Like a good public library or a weather app: steady, c
 5. Not medical advice, on every screen with results.
 
 ## Accessibility & Inclusion
-WCAG 2.1 AA. Atkinson Hyperlegible body type for low-vision and older readers. Status never shown by color alone; always a word too. Large tap targets (48px). Full keyboard use. Reduced-motion alternatives for every animation. Interface text will be translated to Spanish, Chinese (Simplified) and Korean.
+WCAG 2.1 AA. Calibri (Carlito fallback) at 17px for body text, Arial for small labels; keep body text at least 4.5:1 contrast on white. Status never shown by color alone; always a word too. Large tap targets (48px). Full keyboard use. Reduced-motion alternatives for every animation. Interface text will be translated to Spanish, Chinese (Simplified) and Korean.

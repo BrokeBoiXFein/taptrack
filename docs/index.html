@@ -252,36 +252,27 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
     for (x in d.reports) if (x <= y) o.reports[x] = d.reports[x];
     return o;
   }
-  // A value compared to its limit, in words a resident would use.
-  function share(r) {
-    if (r <= 0) return "Not found";
-    if (r < 0.1) return "A tiny amount, under a tenth of the limit";
-    if (r < 0.3) return "Less than a third of the limit";
-    if (r < 0.45) return "Under half the limit";
-    if (r < 0.6) return "About half the limit";
-    if (r < 0.85) return "About three quarters of the limit";
-    if (r <= 1) return "Close to the limit";
-    if (r < 1.5) return "Over the limit";
-    return "About " + Math.round(r) + " times the limit";
-  }
 
   // Status of the latest value against the New York limit, then the federal one.
   function status(key, d) {
     var s = d.series[key], ys = years(s), c = C[key];
-    if (!ys.length) return { tone: "quietc", say: "No results in these reports.", latest: null, r: 0 };
+    if (!ys.length) return { tone: "quietc", say: "No data", latest: null, r: 0 };
     var y = ys[ys.length - 1], v = s[y], latestReport = latestYear(d);
     var peakY = ys[0]; ys.forEach(function (k) { if (s[k] > s[peakY]) peakY = k; });
     var peak = s[peakY];
-    if (y < latestReport && key !== "lead") return { tone: "quietc", say: "Not listed in the " + (+y + 1 === +latestReport ? latestReport + " report" : (+y + 1) + " to " + latestReport + " reports") + ", which usually means not found. Last found at " + v + " in " + y + ".", latest: { y: y, v: v, stale: true }, r: 0 };
+    // Missing from the newest tables usually means not detected.
+    if (y < latestReport && key !== "lead") return { tone: "quietc", say: "Not listed since " + y + " · last " + v, latest: { y: y, v: v, stale: true }, r: 0 };
     var r = v / c.nyLimit, out = { latest: { y: y, v: v }, r: r }, wasHigh = peak > c.nyLimit && peakY !== y;
-    if (key === "lead") { out.tone = v > 15 ? "over" : v > 10 ? "watch" : "good"; out.say = (v === 0 ? "At least 9 in 10 homes tested had no lead found." : "9 in 10 homes tested were at or under " + v + ". The action level is 15.") + " Tested in " + y + "."; }
-    else if (v > c.nyLimit) { out.tone = "over"; out.say = share(r) + ". New York allows " + c.nyLimit + "."; }
-    else if (c.fedLimit && v > c.fedLimit && c.fedLimit < c.nyLimit) { out.tone = "watch"; out.say = "Under New York's limit of " + c.nyLimit + ", but over EPA's new limit of " + c.fedLimit + "."; }
-    else if (r >= 0.5) { out.tone = "watch"; out.say = share(r) + ". New York allows " + c.nyLimit + "." + (key === "nitrate" ? " Infant warning applies." : ""); }
-    else { out.tone = "good"; out.say = share(r) + ". New York allows " + c.nyLimit + "."; }
-    if (wasHigh) out.say += " It was " + peak + " in " + peakY + ".";
+    if (key === "lead") { out.tone = v > 15 ? "over" : v > 10 ? "watch" : "good"; out.say = TAG[out.tone] + " · 90th pct " + fmt(v) + " · AL 15 · tested " + y; }
+    else if (v > c.nyLimit) { out.tone = "over"; out.say = TAG.over + " · " + pct(r) + " (NY " + c.nyLimit + ")"; }
+    else if (c.fedLimit && v > c.fedLimit && c.fedLimit < c.nyLimit) { out.tone = "watch"; out.say = TAG.watch + " · under NY " + c.nyLimit + ", over EPA " + c.fedLimit; }
+    else if (r >= 0.5) { out.tone = "watch"; out.say = TAG.watch + " · " + pct(r) + (key === "nitrate" ? " · infant warning" : ""); }
+    else { out.tone = "good"; out.say = TAG.good + " · " + (v === 0 ? "not detected" : pct(r)); }
+    if (wasHigh) out.say += " · peak " + peak + " (" + peakY + ")";
     return out;
   }
+  var TAG = { good: "OK", watch: "Watch", over: "Over limit" };
+  function pct(r) { return r > 1 ? (r < 10 ? r.toFixed(1) : Math.round(r)) + "× limit" : Math.max(1, Math.round(r * 100)) + "% of limit"; }
   function valText(st) { var lv = st.latest; return lv ? (lv.stale ? "ND" : fmt(lv.v)) : "n/a"; }
   function fillScale(st) { return !st.latest || st.latest.stale ? 0 : Math.min(st.r, 1.3) / 1.3; }
 
@@ -309,21 +300,16 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
     def.hidden = false;
   }
 
+  // Short status summary, e.g. "Over limit: 1,4-Dioxane. Watch: Nitrate. OK: PFOA, PFOS, Lead."
   function verdict(d) {
-    var parts = [], st = {};
-    ORDER.forEach(function (k) { st[k] = status(k, d); });
-    var dx = d.series.dioxane, dxy = years(dx);
-    if (dxy.length) {
-      var peak = Math.max.apply(null, dxy.map(function (y) { return dx[y]; }));
-      var last = dx[dxy[dxy.length - 1]];
-      if (peak > 1 && last <= 1) { parts.push("1,4-dioxane is back under New York's limit after new treatment."); st.dioxane = { tone: "done" }; }
-      else if (last > 1) { parts.push("1,4-dioxane is above New York's limit."); st.dioxane = { tone: "done" }; }
-    }
-    var IN_SENTENCE = { dioxane: "1,4-dioxane", nitrate: "nitrate", pfoa: "PFOA", pfos: "PFOS", lead: "lead at home taps" };
-    var watch = ORDER.filter(function (k) { return st[k].tone === "watch" || st[k].tone === "over"; }).map(function (k) { return IN_SENTENCE[k]; });
-    if (watch.length) parts.push(watch.join(" and ").replace(/^./, function (c) { return c.toUpperCase(); }) + (watch.length > 1 ? " are" : " is") + " the one" + (watch.length > 1 ? "s" : "") + " to watch.");
-    else parts.push(parts.length ? "Everything else is under the limits." : "Everything tracked here is under the limits.");
-    return parts.join(" ");
+    var groups = { over: [], watch: [], good: [], quietc: [] }, NAME = { dioxane: "1,4-Dioxane", nitrate: "Nitrate", pfoa: "PFOA", pfos: "PFOS", lead: "Lead" };
+    ORDER.forEach(function (k) { groups[status(k, d).tone].push(NAME[k]); });
+    var out = [];
+    if (groups.over.length) out.push("Over limit: " + groups.over.join(", ") + ".");
+    if (groups.watch.length) out.push("Watch: " + groups.watch.join(", ") + ".");
+    if (groups.good.length) out.push("OK: " + groups.good.join(", ") + ".");
+    if (groups.quietc.length) out.push("Not listed: " + groups.quietc.join(", ") + ".");
+    return out.join(" ");
   }
 
   // Full trend chart. series: [{name, s, color}]. hi: a year to ring (single-series only).
@@ -410,7 +396,7 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
       '<div class="wrap">' + mapHTML("Where " + d.name + " is") + yearCtl(d) +
       '<p class="verdict" id="verdict" aria-live="polite">' + esc(verdict(dv)) + '</p><p class="basis" id="basis">' + basis(d) + "</p>" +
       '<ul class="log">' + rows + "</ul>" +
-      '<p class="glass-key">' + glass("key", { tone: "good", latest: { v: 1 }, r: 0.5 }) + "<span>Each glass fills up toward the dashed line, which is New York's limit. Tap a row to see every year.</span></p>" +
+      '<p class="glass-key">' + glass("key", { tone: "good", latest: { v: 1 }, r: 0.5 }) + "<span>Glass = share of NY limit. Dashed line = limit. Tap a row for every year.</span></p>" +
       termBar(["highest", "limit", "nd", "ppb", "ppt", "ppm", "p90"]) +
       '<div class="actions"><button type="button" data-view="filter">Do I need a filter?</button><button type="button" class="quiet" data-view="compare">Compare with another district</button></div></div>' +
       '<section class="band ground" aria-labelledby="ground-h"><div class="wrap"><h2 id="ground-h">Where your water comes from underground</h2>' +
@@ -424,7 +410,7 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
   function rowLabel(k, st) { return SHORT[k] + ": " + valText(st) + " " + UNIT[k] + ". " + st.say + " Open every year."; }
   function basis(d) {
     var y = state.year;
-    return d.reports[y] ? "The highest result the district found in " + y + ", usually at its worst well." : "The district has not posted a " + y + " report, so these are the latest results before " + y + ".";
+    return d.reports[y] ? "Highest result, " + y + " (worst well)." : "No " + y + " report posted. Showing latest before " + y + ".";
   }
   function yearCtl(d) {
     var ys = years(d.reports), lo = +ys[0], hi = +ys[ys.length - 1], ticks = "";
@@ -503,9 +489,9 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
   function readout(d, k, y) {
     var v = d.series[k][y], c = C[k];
     var rep = d.reports[y] ? y : years(d.reports).filter(function (x) { return x > y; })[0];
-    var words = k === "lead" ? (v === 0 ? "At least 9 in 10 homes tested had no lead found" : "9 in 10 homes tested were at or under " + v + ". The action level is 15") : share(v / c.nyLimit);
-    return '<p class="readout" aria-live="polite"><b>' + y + ":</b> " + fmt(v) + " " + UNIT[k] + ". " + esc(words) + "." +
-      (rep ? ' <a href="' + d.reports[rep] + '" target="_blank" rel="noopener">See it in the ' + rep + " report</a>" : "") + "</p>";
+    var words = k === "lead" ? "90th pct · AL 15" : v === 0 ? "not detected" : pct(v / c.nyLimit) + " (NY " + c.nyLimit + ")";
+    return '<p class="readout" aria-live="polite"><b>' + y + ":</b> " + fmt(v) + " " + UNIT[k] + " · " + esc(words) +
+      (rep ? ' · <a href="' + d.reports[rep] + '" target="_blank" rel="noopener">' + rep + " report</a>" : "") + "</p>";
   }
 
   function filterRec(cn) {

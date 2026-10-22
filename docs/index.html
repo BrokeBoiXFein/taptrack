@@ -71,6 +71,16 @@ button.quiet { background: transparent; color: var(--aquifer); border: 1.5px sol
 .band small { color: var(--band-muted); font-size: 14px; display: block; }
 .band h1 { font-size: clamp(30px, 8vw, 44px); line-height: 1.02; margin: 4px 0 6px; }
 .strata { display: block; width: 100%; height: auto; margin-top: 16px; }
+.band.ground { margin-top: 32px; }
+.band.ground .wrap { padding-block: 26px 0; }
+.band.ground h2 { font-size: 22px; margin-bottom: 8px; }
+.band.ground p { margin: 0 0 14px; max-width: 65ch; }
+.layers { display: grid; gap: 10px; margin: 0; }
+.layers > div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 12px; align-items: baseline; }
+.layers dt { font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.layers dt i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; flex: none; box-shadow: 0 0 0 1px var(--band-muted); }
+.layers dd { margin: 0; color: var(--band-muted); }
+@media (max-width: 420px) { .layers > div { grid-template-columns: 1fr; gap: 2px; } }
 
 .verdict { font-family: var(--display); font-weight: 500; font-size: 22px; line-height: 1.22; margin: 22px 0 8px; text-wrap: pretty; }
 .basis { font-size: 14px; color: var(--muted); margin: 0 0 6px; }
@@ -362,7 +372,7 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
       '<rect x="0" y="0" width="640" height="20" fill="var(--topsoil)"/><rect x="0" y="20" width="640" height="30" fill="var(--sand)"/>' +
       '<rect x="0" y="50" width="640" height="44" fill="var(--magothy)"/><rect x="0" y="94" width="640" height="8" fill="var(--clay)"/><rect x="0" y="102" width="640" height="18" fill="var(--lloyd)"/>' +
       '<g stroke="#F2F5F4" stroke-width="2">' + [120, 200, 280, 360, 440].map(function (x, i) { return '<line x1="' + x + '" y1="0" x2="' + x + '" y2="' + (76 + (i % 2) * 6) + '"/>'; }).join("") + (lloyd ? '<line x1="540" y1="0" x2="540" y2="114"/>' : "") + "</g></svg>" +
-      '<div class="row" style="justify-content:space-between;font-size:13px;color:var(--band-muted);padding-block:8px 18px"><span>Upper glacial sand, Magothy aquifer' + (lloyd ? ", Lloyd aquifer" : "") + '</span><span>' + esc(txt) + "</span></div>";
+      '<div class="row" style="justify-content:space-between;font-size:13px;color:var(--band-muted);padding-block:8px 18px"><span>White lines are the district\'s wells' + (lloyd ? ". One reaches the Lloyd" : "") + '</span><span>' + esc(txt) + "</span></div>";
   }
 
   function districtOptions(sel) {
@@ -384,8 +394,9 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
     var d = byId(state.district);
     if (!d) {
       return header() + '<div class="wrap"><h2 style="font-size:24px;margin-top:8px">See what is in your tap water, and how it has changed.</h2><p class="basis" style="margin-top:10px">Every water district puts out a yearly report as a PDF. TapTrack reads them for you and lines the years up side by side, in plain words, with a link to every report.</p>' +
+        mapHTML(state.pin ? "Your address on the map" : "Find your district on the map") +
         '<div class="actions">' + D.districts.map(function (x, i) { return '<button type="button"' + (i ? ' class="quiet"' : "") + ' data-go="' + x.id + '">See ' + esc(x.name) + "</button>"; }).join("") + "</div>" +
-        mapHTML(state.pin ? "Your address on the map" : "Or find your district on the map") + foot(null) + "</div>";
+        foot(null) + "</div>";
     }
     var dv = upTo(d, state.year);
     var rows = ORDER.map(function (k) {
@@ -393,14 +404,22 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
       return '<li data-row="' + k + '"><button type="button" data-key="' + k + '" aria-label="' + esc(rowLabel(k, st)) + '"><span><span class="name">' + SHORT[k] + '</span><span class="say ' + st.tone + '">' + esc(st.say) + "</span></span>" +
         glass(k, st) + '<span class="val num"><strong>' + valText(st) + "</strong><em>" + UNIT[k] + "</em></span></button></li>";
     }).join("");
+    // Page order: district name, map, year slider, the data, then the aquifer breakdown.
     return header() +
-      '<div class="band"><div class="wrap"><small>Your water comes from</small><h1>' + esc(d.name) + '</h1><small class="num">' + d.population.toLocaleString() + " people. District ID " + d.pwsid + "</small>" + strata(d) + "</div></div>" +
-      '<div class="wrap">' + yearCtl(d) + '<p class="verdict" id="verdict" aria-live="polite">' + esc(verdict(dv)) + '</p><p class="basis" id="basis">' + basis(d) + "</p>" +
+      '<div class="band"><div class="wrap" style="padding-bottom:22px"><small>Your water comes from</small><h1>' + esc(d.name) + '</h1><small class="num">' + d.population.toLocaleString() + " people. District ID " + d.pwsid + "</small></div></div>" +
+      '<div class="wrap">' + mapHTML("Where " + d.name + " is") + yearCtl(d) +
+      '<p class="verdict" id="verdict" aria-live="polite">' + esc(verdict(dv)) + '</p><p class="basis" id="basis">' + basis(d) + "</p>" +
       '<ul class="log">' + rows + "</ul>" +
       '<p class="glass-key">' + glass("key", { tone: "good", latest: { v: 1 }, r: 0.5 }) + "<span>Each glass fills up toward the dashed line, which is New York's limit. Tap a row to see every year.</span></p>" +
       termBar(["highest", "limit", "nd", "ppb", "ppt", "ppm", "p90"]) +
-      '<div class="actions"><button type="button" data-view="filter">Do I need a filter?</button><button type="button" class="quiet" data-view="compare">Compare with another district</button></div>' +
-      mapHTML("Where " + d.name + " is") + foot(d) + "</div>";
+      '<div class="actions"><button type="button" data-view="filter">Do I need a filter?</button><button type="button" class="quiet" data-view="compare">Compare with another district</button></div></div>' +
+      '<section class="band ground" aria-labelledby="ground-h"><div class="wrap"><h2 id="ground-h">Where your water comes from underground</h2>' +
+      "<p>Long Island gets all its tap water from wells drilled into layers of sand deep underground, called aquifers. Rain soaks down through them over years, so what goes on the ground, like fertilizer, cesspools and old spills, can end up in the water.</p>" +
+      '<dl class="layers"><div><dt><i style="background:var(--sand)"></i>Upper glacial</dt><dd>Closest to the surface. Easiest for pollution to reach.</dd></div>' +
+      '<div><dt><i style="background:var(--magothy)"></i>Magothy</dt><dd>The main layer, a few hundred feet down. Most Long Island wells pump from here.</dd></div>' +
+      '<div><dt><i style="background:var(--lloyd)"></i>Lloyd</dt><dd>The deepest and oldest water, under a clay layer that helps protect it.</dd></div></dl>' +
+      strata(d) + "</div></section>" +
+      '<div class="wrap">' + foot(d) + "</div>";
   }
   function rowLabel(k, st) { return SHORT[k] + ": " + valText(st) + " " + UNIT[k] + ". " + st.say + " Open every year."; }
   function basis(d) {

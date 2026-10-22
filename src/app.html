@@ -5,6 +5,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<!-- Leaflet draws the district map. If it fails to load, the app still works without the map. -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 /* Layout: one narrow reading column; a dark aquifer band under the district name; contaminant rows read like a well log */
 :root {
@@ -167,6 +170,22 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
 .chart circle[data-py] { cursor: pointer; }
 .cmp-pick { align-items: center; margin-top: 16px; }
 .cmp-pick span { color: var(--muted); }
+/* Address box with a dropdown of matching addresses */
+.combo { position: relative; flex: 1 1 220px; min-width: 0; display: flex; }
+.combo input[type="text"] { flex: 1 1 auto; width: 100%; }
+.addr-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 1100; margin: 0; padding: 4px; list-style: none; background: var(--surface); border: 1.5px solid var(--line); border-radius: 10px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.18); max-height: 320px; overflow-y: auto; }
+.addr-list li { padding: 9px 12px; border-radius: 8px; cursor: pointer; min-height: 44px; }
+.addr-list li b { display: block; font-weight: 700; }
+.addr-list li small { color: var(--muted); font-size: 14px; }
+.addr-list li:hover, .addr-list li[aria-selected="true"] { background: color-mix(in oklab, var(--aquifer) 18%, var(--surface)); }
+
+/* District map */
+.map { height: 340px; margin-top: 12px; border: 1.5px solid var(--rule); border-radius: 12px; position: relative; z-index: 0; background: var(--surface); }
+.map-note { margin-top: 8px; }
+.leaflet-container { font-family: var(--body); }
+.leaflet-tooltip { font-family: var(--body); font-size: 14px; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9); } }
+:root[data-theme="dark"] .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9); }
 @media (prefers-reduced-motion: reduce) { .glass .fill { transition: none; } }
 @media (prefers-reduced-motion: no-preference) {
   .chart polyline.series { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw 900ms ease-out forwards; }
@@ -177,10 +196,12 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
 <div id="app"></div>
 
 <script id="water-data" type="application/json">/*__DATA__*/</script>
+<script id="bounds-data" type="application/json">/*__BOUNDS__*/</script>
 <script>
 (function () {
   "use strict";
   var D = JSON.parse(document.getElementById("water-data").textContent);
+  var B = JSON.parse(document.getElementById("bounds-data").textContent);
   var C = D.contaminants;
   var ORDER = ["dioxane", "nitrate", "pfoa", "pfos", "lead"];
   var SHORT = { dioxane: "1,4-Dioxane", nitrate: "Nitrate", pfoa: "PFOA", pfos: "PFOS", lead: "Lead at home taps" };
@@ -354,7 +375,7 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
 
   function header() {
     return '<div class="wrap top"><div class="brand"><b>TapTrack</b><span>Long Island tap water, year by year. Free.</span></div>' +
-      '<form class="find" id="find"><label for="addr">Your address</label><div class="row"><input type="text" id="addr" autocomplete="street-address" placeholder="e.g. 1 Jericho Turnpike, Jericho NY"><button type="submit">Find my water</button></div>' +
+      '<form class="find" id="find" autocomplete="off"><label for="addr">Your address</label><div class="row"><div class="combo"><input type="text" id="addr" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="addr-list" autocomplete="off" placeholder="Start typing, e.g. 100 Main St"><ul class="addr-list" id="addr-list" role="listbox" aria-label="Matching addresses" hidden></ul></div><button type="submit">Find my water</button></div>' +
       '<label for="pick" style="margin-top:12px">Or pick your district</label><div class="row"><select id="pick">' + districtOptions(state.district) + "</select></div>" +
       '<p class="msg' + (state.msgErr ? " err" : "") + '" id="msg" role="status">' + esc(state.msg) + "</p></form></div>";
   }
@@ -363,7 +384,8 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
     var d = byId(state.district);
     if (!d) {
       return header() + '<div class="wrap"><h2 style="font-size:24px;margin-top:8px">See what is in your tap water, and how it has changed.</h2><p class="basis" style="margin-top:10px">Every water district puts out a yearly report as a PDF. TapTrack reads them for you and lines the years up side by side, in plain words, with a link to every report.</p>' +
-        '<div class="actions">' + D.districts.map(function (x, i) { return '<button type="button"' + (i ? ' class="quiet"' : "") + ' data-go="' + x.id + '">See ' + esc(x.name) + "</button>"; }).join("") + "</div>" + foot(null) + "</div>";
+        '<div class="actions">' + D.districts.map(function (x, i) { return '<button type="button"' + (i ? ' class="quiet"' : "") + ' data-go="' + x.id + '">See ' + esc(x.name) + "</button>"; }).join("") + "</div>" +
+        mapHTML(state.pin ? "Your address on the map" : "Or find your district on the map") + foot(null) + "</div>";
     }
     var dv = upTo(d, state.year);
     var rows = ORDER.map(function (k) {
@@ -378,7 +400,7 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
       '<p class="glass-key">' + glass("key", { tone: "good", latest: { v: 1 }, r: 0.5 }) + "<span>Each glass fills up toward the dashed line, which is New York's limit. Tap a row to see every year.</span></p>" +
       termBar(["highest", "limit", "nd", "ppb", "ppt", "ppm", "p90"]) +
       '<div class="actions"><button type="button" data-view="filter">Do I need a filter?</button><button type="button" class="quiet" data-view="compare">Compare with another district</button></div>' +
-      foot(d) + "</div>";
+      mapHTML("Where " + d.name + " is") + foot(d) + "</div>";
   }
   function rowLabel(k, st) { return SHORT[k] + ": " + valText(st) + " " + UNIT[k] + ". " + st.say + " Open every year."; }
   function basis(d) {
@@ -436,7 +458,7 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
       h += '<div>Source: <a id="src" href="' + d.reports[ly] + '" target="_blank" rel="noopener">' + esc(d.name) + " " + ly + ' report</a>. <button type="button" class="back" style="padding:0" data-view="notes">Report errors we found (' + d.notes.length + ")</button></div>";
     }
     h += "<div>" + esc(D.meta.valueRule) + " Not medical advice.</div>";
-    h += '<div>District boundaries: <a href="https://www.epa.gov/ground-water-and-drinking-water/community-water-system-service-area-boundaries" target="_blank" rel="noopener">EPA service area map</a>. Limits: New York State Department of Health and EPA.</div></div>';
+    h += '<div>District boundaries: <a href="https://www.epa.gov/ground-water-and-drinking-water/community-water-system-service-area-boundaries" target="_blank" rel="noopener">EPA service area map</a>. Limits: New York State Department of Health and EPA. Street map and address search: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> and Photon by komoot.</div></div>';
     return h;
   }
 
@@ -527,7 +549,9 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
   function render() {
     var v = state.view;
     if (v !== "home" && v !== "compare" && !byId(state.district)) v = "home";
+    if (mapObj) { mapObj.remove(); mapObj = null; } // before its container is replaced
     app.innerHTML = v === "detail" ? detail() : v === "filter" ? filter() : v === "compare" ? compare() : v === "notes" ? notes() : home();
+    initMap();
   }
   function go(view, extra) { stopPlay(); state.view = view; for (var k in extra || {}) state[k] = extra[k]; render(); window.scrollTo(0, 0); }
   function setMsg(m, err) { state.msg = m; state.msgErr = !!err; var el = document.getElementById("msg"); if (el) { el.textContent = m; el.className = "msg" + (err ? " err" : ""); } }
@@ -540,34 +564,195 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
       return;
     }
     var d = byId(val); if (!d) return;
-    state.district = val; save(); go("home", { msg: "", msgErr: false, year: latestYear(d), cmpA: null, cmpB: null });
+    state.district = val; save(); go("home", { msg: "", msgErr: false, year: latestYear(d), cmpA: null, cmpB: null, pin: null });
   }
 
-  // Address to district: geocode with OpenStreetMap, then ask EPA's boundary map which system covers that point.
-  function findAddress(q) {
-    setMsg("Looking up " + q + "…");
-    var geo = "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q=" + encodeURIComponent(q);
-    fetch(geo, { headers: { "Accept": "application/json" } })
-      .then(function (r) { if (!r.ok) throw new Error("geo"); return r.json(); })
-      .then(function (g) {
-        if (!g.length) throw new Error("none");
-        var url = "https://services.arcgis.com/cJ9YHowT8TU7DUyn/arcgis/rest/services/Water_System_Boundaries/FeatureServer/0/query?f=json&returnGeometry=false&outFields=PWSID,PWS_Name&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&geometry=" + g[0].lon + "," + g[0].lat;
-        return fetch(url).then(function (r) { return r.json(); });
-      })
-      .then(function (res) {
-        var f = (res.features || []).map(function (x) { return x.attributes; });
-        if (!f.length) { setMsg("That address is outside the water districts TapTrack knows. Pick your district from the list.", true); return; }
-        var hit = null; f.forEach(function (a) { if (!hit && byPws(a.PWSID)) hit = byPws(a.PWSID); });
-        if (hit) { state.district = hit.id; save(); go("home", { msg: "Found: " + hit.name + ".", msgErr: false, year: latestYear(hit) }); return; }
-        setMsg("Your water comes from " + f[0].PWS_Name + " (" + f[0].PWSID + "). Its full history is coming next. Pick Jericho or Plainview to see how TapTrack works.", false);
-      })
-      .catch(function (e) {
-        setMsg(e.message === "none" ? "No match for that address. Add the town and NY, or pick your district from the list." : "Address search can't reach the map right now. Pick your district from the list.", true);
+  // ---- Which district is an address in? ----
+  // District outlines come from EPA's service area map (data/boundaries.geojson), so the lookup runs in the browser.
+  function inRing(x, y, ring) {
+    var inside = false;
+    for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      var xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+  }
+  function districtAt(lon, lat) {
+    for (var i = 0; i < B.features.length; i++) {
+      var g = B.features[i].geometry, polys = g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : [];
+      for (var p = 0; p < polys.length; p++) {
+        if (!inRing(lon, lat, polys[p][0])) continue;
+        var hole = false; for (var h = 1; h < polys[p].length; h++) if (inRing(lon, lat, polys[p][h])) hole = true;
+        if (!hole) return B.features[i].properties.pwsid;
+      }
+    }
+    return null;
+  }
+  window.TapTrack = { districtAt: districtAt }; // used by tests
+
+  function lookupPoint(lon, lat, label) {
+    var id = districtAt(lon, lat), d = id && byPws(id), o = id && other(id);
+    state.pin = [lat, lon];
+    if (d) { state.district = d.id; save(); go("home", { msg: "Found: " + d.name + ".", msgErr: false, year: latestYear(d) }); return; }
+    if (o) { state.district = null; save(); go("home", { msg: "Your water comes from " + o.name + ". Its full history is coming next. It is outlined on the map below.", msgErr: false }); return; }
+    // Outside the NY-03 districts in TapTrack: ask EPA's boundary map for the system's name.
+    setMsg("Checking EPA's map for " + label + "…");
+    var url = "https://services.arcgis.com/cJ9YHowT8TU7DUyn/arcgis/rest/services/Water_System_Boundaries/FeatureServer/0/query?f=json&returnGeometry=false&outFields=PWSID,PWS_Name&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&geometry=" + lon + "," + lat;
+    fetch(url).then(function (r) { return r.json(); }).then(function (res) {
+      var f = (res.features || []).map(function (x) { return x.attributes; });
+      setMsg(f.length ? "Your water comes from " + f[0].PWS_Name + " (" + f[0].PWSID + "). TapTrack covers NY-03 districts only for now." : "That address is outside the water districts TapTrack knows. Pick your district from the list.", !f.length);
+    }).catch(function () { setMsg("That address is outside the NY-03 districts TapTrack covers.", true); });
+  }
+
+  // ---- Address dropdown: matching addresses with town and ZIP as you type ----
+  // Suggestions come from Photon (komoot), an OpenStreetMap search built for type-ahead. The box limits results to NY-03.
+  var sugg = [], active = -1, suggTimer = null, suggSeq = 0;
+  var BBOX = "-73.95,40.55,-73.35,40.95";
+  function addrParts(p) {
+    var street = [p.housenumber, p.street].filter(Boolean).join(" ");
+    var line1 = p.name && p.osm_value !== "house" ? p.name + (street ? ", " + street : "") : street || p.name || "";
+    var town = p.city || p.district || p.locality || p.county || "";
+    return { line1: line1, line2: (town ? town + ", " : "") + "NY" + (p.postcode ? " " + p.postcode : "") };
+  }
+  function suggest(q) {
+    var seq = ++suggSeq;
+    if (!window.fetch) return Promise.resolve(null);
+    return fetch("https://photon.komoot.io/api/?limit=7&lang=en&bbox=" + BBOX + "&q=" + encodeURIComponent(q))
+      .then(function (r) { if (!r.ok) throw new Error("photon"); return r.json(); })
+      .then(function (j) {
+        if (seq !== suggSeq) return null; // a newer search is on its way
+        var seen = {}, out = [];
+        (j.features || []).forEach(function (f) {
+          var p = f.properties || {};
+          if (!/^(NY|New York)$/.test(p.state || "")) return;
+          var a = addrParts(p), key = a.line1 + "|" + a.line2;
+          if (!a.line1 || seen[key]) return;
+          seen[key] = 1;
+          out.push({ line1: a.line1, line2: a.line2, lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1] });
+        });
+        return out.slice(0, 6);
       });
+  }
+  function showList(list) {
+    var ul = document.getElementById("addr-list"), input = document.getElementById("addr");
+    if (!ul || !input) return;
+    sugg = list; active = -1;
+    ul.innerHTML = list.map(function (s, i) { return '<li role="option" id="opt-' + i + '" data-opt="' + i + '" aria-selected="false"><b>' + esc(s.line1) + "</b><small>" + esc(s.line2) + "</small></li>"; }).join("");
+    ul.hidden = !list.length;
+    input.setAttribute("aria-expanded", String(!!list.length));
+    input.removeAttribute("aria-activedescendant");
+  }
+  function hideList() {
+    var ul = document.getElementById("addr-list"), input = document.getElementById("addr");
+    if (ul) ul.hidden = true;
+    if (input) { input.setAttribute("aria-expanded", "false"); input.removeAttribute("aria-activedescendant"); }
+    active = -1;
+  }
+  function moveActive(step) {
+    if (!sugg.length) return;
+    active = (active + step + sugg.length) % sugg.length;
+    app.querySelectorAll(".addr-list li").forEach(function (li, i) { li.setAttribute("aria-selected", String(i === active)); });
+    var el = document.getElementById("opt-" + active);
+    document.getElementById("addr").setAttribute("aria-activedescendant", "opt-" + active);
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: "nearest" });
+  }
+  function pickSugg(i) {
+    var s = sugg[i], input = document.getElementById("addr"); if (!s) return;
+    if (input) input.value = s.line1 + ", " + s.line2;
+    hideList();
+    lookupPoint(s.lon, s.lat, s.line1);
+  }
+  function onType(q) {
+    clearTimeout(suggTimer);
+    if (q.length < 3) { suggSeq++; sugg = []; hideList(); return; }
+    suggTimer = setTimeout(function () {
+      suggest(q).then(function (list) {
+        if (!list) return;
+        showList(list);
+        setMsg(list.length ? "" : q.length > 5 ? "No matching addresses yet. Keep typing, or add the town." : "", false);
+      }).catch(function () { hideList(); });
+    }, 300);
+  }
+  // Pressing "Find my water" without picking from the list.
+  function findAddress(q) {
+    if (sugg.length === 1) { pickSugg(0); return; }
+    setMsg("Looking up " + q + "…");
+    suggest(q).then(function (list) {
+      if (list === null) throw new Error("photon");
+      if (!list.length) { setMsg("No match for that address. Add the town, or pick your district from the list.", true); return; }
+      if (list.length === 1) { sugg = list; pickSugg(0); return; }
+      showList(list);
+      setMsg("More than one place matches. Pick yours from the list.", false);
+      document.getElementById("addr").focus();
+    }).catch(function () { nominatim(q); });
+  }
+  // Backup geocoder if Photon is down.
+  function nominatim(q) {
+    fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q=" + encodeURIComponent(q), { headers: { "Accept": "application/json" } })
+      .then(function (r) { if (!r.ok) throw new Error("geo"); return r.json(); })
+      .then(function (g) { if (!g.length) throw new Error("none"); lookupPoint(+g[0].lon, +g[0].lat, q); })
+      .catch(function (e) { setMsg(e.message === "none" ? "No match for that address. Add the town and NY, or pick your district from the list." : "Address search can't reach the map right now. Pick your district from the list.", true); });
+  }
+
+  // ---- District map (Leaflet + OpenStreetMap, outlines from EPA) ----
+  var mapObj = null;
+  function mapHTML(title) {
+    return '<section class="mapsec"><h2>' + esc(title) + '</h2><div class="map" id="map" role="region" aria-label="Map of water district outlines. You can also pick your district from the list at the top."></div>' +
+      '<p class="basis map-note">Solid outlines have full history in TapTrack. Dashed ones are coming next. Tap a district to open it. Outlines: EPA service area map.</p></section>';
+  }
+  function initMap() {
+    if (mapObj) { mapObj.remove(); mapObj = null; }
+    var el = document.getElementById("map"); if (!el) return;
+    if (!window.L) { el.outerHTML = '<p class="basis">The map could not load. Pick your district from the list at the top.</p>'; return; }
+    var cs = getComputedStyle(document.documentElement);
+    function tok(n) { return cs.getPropertyValue(n).trim(); }
+    var cur = byId(state.district), blue = tok("--aquifer"), muted = tok("--muted");
+    // Highlight the open district, or the one under the address pin even if TapTrack doesn't cover it yet.
+    var focusId = cur ? cur.pwsid : state.pin ? districtAt(state.pin[1], state.pin[0]) : null;
+    mapObj = L.map(el, { scrollWheelZoom: false });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(mapObj);
+    var mine = null;
+    var layer = L.geoJSON(B, {
+      style: function (f) {
+        var p = f.properties.pwsid, has = !!byPws(p), me = focusId === p;
+        return me ? { color: blue, weight: 3.5, fillColor: blue, fillOpacity: 0.3, dashArray: has ? null : "5 5" } : has ? { color: blue, weight: 2, fillColor: blue, fillOpacity: 0.08 } : { color: muted, weight: 1.5, dashArray: "5 5", fillColor: muted, fillOpacity: 0.04 };
+      },
+      onEachFeature: function (f, lyr) {
+        var p = f.properties.pwsid, d = byPws(p), o = other(p);
+        if (focusId === p) mine = lyr;
+        lyr.bindTooltip(esc((d || o || { name: p }).name) + (d ? "" : " (coming next)"), { sticky: true });
+        lyr.on("click", function () {
+          setTimeout(function () { // let Leaflet finish the click before the page redraws
+            if (d) choose(d.id);
+            else if (o) setMsg(o.name + " is outlined in gray: its full history is coming next.", false);
+          }, 0);
+        });
+      }
+    });
+    // Leaflet needs a view before it can draw outlines, so fit first, then add.
+    mapObj.fitBounds((mine || layer).getBounds(), { padding: [16, 16] });
+    layer.addTo(mapObj);
+    if (state.pin) L.circleMarker(state.pin, { radius: 8, color: tok("--ink"), weight: 3, fillColor: tok("--focus"), fillOpacity: 1 }).bindTooltip("Your address").addTo(mapObj);
   }
 
   app.addEventListener("submit", function (e) { if (e.target.id === "find") { e.preventDefault(); var q = document.getElementById("addr").value.trim(); if (q) findAddress(q); else setMsg("Type an address first, or pick your district.", true); } });
-  app.addEventListener("input", function (e) { if (e.target.id === "yr") { stopPlay(); setYear(e.target.value); } });
+  app.addEventListener("input", function (e) {
+    if (e.target.id === "yr") { stopPlay(); setYear(e.target.value); }
+    if (e.target.id === "addr") onType(e.target.value.trim());
+  });
+  app.addEventListener("keydown", function (e) {
+    if (e.target.id !== "addr") return;
+    var open = !document.getElementById("addr-list").hidden;
+    if (e.key === "ArrowDown" && sugg.length) { e.preventDefault(); if (!open) showList(sugg); moveActive(1); }
+    else if (e.key === "ArrowUp" && open) { e.preventDefault(); moveActive(-1); }
+    else if (e.key === "Enter" && open && active >= 0) { e.preventDefault(); pickSugg(active); }
+    else if (e.key === "Escape" && open) { e.preventDefault(); hideList(); }
+  });
+  app.addEventListener("focusout", function (e) {
+    if (e.target.id !== "addr") return;
+    setTimeout(function () { var c = app.querySelector(".combo"); if (c && !c.contains(document.activeElement)) hideList(); }, 200);
+  });
+  app.addEventListener("mousedown", function (e) { if (e.target.closest("[data-opt]")) e.preventDefault(); }); // keep focus in the box while picking
   app.addEventListener("change", function (e) {
     var t = e.target;
     if (t.id === "pick") choose(t.value);
@@ -575,6 +760,8 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
     if (t.dataset && t.dataset.concern) { state.concerns[t.dataset.concern] = t.checked; render(); var el = app.querySelector('[data-concern="' + t.dataset.concern + '"]'); if (el) el.focus(); }
   });
   app.addEventListener("click", function (e) {
+    var opt = e.target.closest("[data-opt]");
+    if (opt) { pickSugg(+opt.dataset.opt); return; }
     var p = e.target.closest("[data-py]");
     if (p && app.contains(p)) { state.pickYear = p.dataset.py; render(); var f = app.querySelector('button[data-py="' + p.dataset.py + '"]'); if (f) f.focus(); return; }
     var b = e.target.closest("button"); if (!b || !app.contains(b)) return;

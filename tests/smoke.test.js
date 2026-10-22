@@ -77,6 +77,32 @@ test("address search with an empty box asks for an address", () => {
   assert.match(p.doc.getElementById("msg").textContent, /Type an address/);
 });
 
+test("address lookup finds the right district from the EPA outlines", () => {
+  const p = open("");
+  const at = p.doc.defaultView.TapTrack.districtAt;
+  const cases = [
+    [-73.4829973, 40.7847594, "NY2902845"], // 100 Main Pkwy E, Plainview
+    [-73.6895363, 40.8303203, "NY2912267"], // 100 Main St, Port Washington
+    [-73.5398, 40.792, "NY2902831"], // Jericho Tpke at Route 106
+    [-73.5251, 40.7673, "NY2902829"], // Hicksville station
+    [-73.6337, 40.8623, "NY2902826"], // Glen Cove City Hall
+    [-73.6996, 40.7967, "NY2902836"], // Manhasset station
+    [-73.6386561, 40.7420722, null], // 100 Main St, Mineola: its own village system, not in TapTrack
+  ];
+  for (const [lon, lat, want] of cases) assert.strictEqual(at(lon, lat), want, lon + "," + lat);
+});
+
+test("address box is an accessible dropdown, and the page works without the map library", () => {
+  const p = open("jericho");
+  const box = p.doc.getElementById("addr");
+  assert.strictEqual(box.getAttribute("role"), "combobox");
+  assert.strictEqual(box.getAttribute("aria-controls"), "addr-list");
+  box.value = "100 Main";
+  box.dispatchEvent(new p.doc.defaultView.Event("input", { bubbles: true }));
+  p.check("typing an address");
+  assert.match(p.doc.body.textContent, /map could not load/);
+});
+
 for (const d of data.districts) {
   test(d.id + ": home", () => {
     const p = open(d.id);

@@ -189,6 +189,29 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
 .addr-list li small { color: var(--muted); font-size: 14px; }
 .addr-list li:hover, .addr-list li[aria-selected="true"] { background: color-mix(in oklab, var(--aquifer) 18%, var(--surface)); }
 
+/* Ranking: chips pick what to rank by; the map and list follow the year slider */
+button.chip { height: 40px; padding: 0 14px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1.5px solid var(--line); font-size: 14px; }
+button.chip:hover { border-color: var(--aquifer); filter: none; }
+button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--ground); border-color: var(--aquifer); }
+.rank-by { margin-top: 4px; }
+.map-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+.map-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.ranking { list-style: none; margin: 12px 0 0; padding: 0; }
+.ranking li + li { border-top: 1px solid var(--rule); }
+.ranking button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 2px 10px; width: 100%; padding: 10px 0; cursor: pointer; }
+.ranking button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.ranking button:hover .rk-name { text-decoration: underline; text-underline-offset: 3px; }
+.ranking .rk-n { grid-row: span 2; font-family: var(--display); font-weight: 700; font-size: 20px; font-variant-numeric: tabular-nums; }
+.ranking .rk-name { font-weight: 700; }
+.ranking [aria-current="true"] .rk-name::after { content: " (this page)"; font-weight: 400; color: var(--muted); }
+.ranking .say { font-size: 14px; }
+
+/* Hover a contaminant: what it is linked to */
+.log li { position: relative; }
+.log .tip { position: absolute; left: 0; bottom: calc(100% - 10px); z-index: 20; max-width: 360px; padding: 10px 12px; border-radius: 8px; background: var(--ink); color: var(--ground); font-size: 14px; line-height: 1.4; opacity: 0; visibility: hidden; transform: translateY(4px); transition: opacity 150ms ease-out, transform 150ms ease-out, visibility 150ms; pointer-events: none; }
+.log li:hover .tip, .log li:focus-within .tip { opacity: 1; visibility: visible; transform: none; }
+@media (prefers-reduced-motion: reduce) { .log .tip { transition: none; transform: none; } }
+
 /* District map */
 .map { height: 340px; margin-top: 12px; border: 1.5px solid var(--rule); border-radius: 12px; position: relative; z-index: 0; background: var(--surface); }
 .map-note { margin-top: 8px; }
@@ -229,7 +252,7 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
     p90: ["90th percentile", "For lead, the district tests the tap in about 30 homes. Line the results up from low to high. The 90th percentile is the level that 9 out of 10 homes are at or below."],
     action: ["Action level", "Lead's trigger point, not a limit. If more than 1 in 10 homes tested are above 15, the district must take extra steps to cut lead. It drops to 10 in 2027."]
   };
-  var state = { view: "home", district: null, key: null, year: null, pickYear: null, cmpA: null, cmpB: null, compareKey: "dioxane", msg: "", msgErr: false, concerns: { nitrate: false, pfas: true, lead: false, dioxane: false, baby: false } };
+  var state = { view: "home", district: null, key: null, year: null, rank: "overall", pin: null, pickYear: null, cmpA: null, cmpB: null, compareKey: "dioxane", msg: "", msgErr: false, concerns: { nitrate: false, pfas: true, lead: false, dioxane: false, baby: false } };
   var playTimer = null;
 
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -272,7 +295,7 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
     return out;
   }
   var TAG = { good: "OK", watch: "Watch", over: "Over limit" };
-  function pct(r) { return r > 1 ? (r < 10 ? r.toFixed(1) : Math.round(r)) + "× limit" : Math.max(1, Math.round(r * 100)) + "% of limit"; }
+  function pct(r) { return r >= 2 ? (r < 10 ? r.toFixed(1) : Math.round(r)) + "× limit" : Math.max(1, Math.round(r * 100)) + "% of limit"; }
   function valText(st) { var lv = st.latest; return lv ? (lv.stale ? "ND" : fmt(lv.v)) : "n/a"; }
   function fillScale(st) { return !st.latest || st.latest.stale ? 0 : Math.min(st.r, 1.3) / 1.3; }
 
@@ -387,8 +410,8 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
     var dv = upTo(d, state.year);
     var rows = ORDER.map(function (k) {
       var st = status(k, dv);
-      return '<li data-row="' + k + '"><button type="button" data-key="' + k + '" aria-label="' + esc(rowLabel(k, st)) + '"><span><span class="name">' + SHORT[k] + '</span><span class="say ' + st.tone + '">' + esc(st.say) + "</span></span>" +
-        glass(k, st) + '<span class="val num"><strong>' + valText(st) + "</strong><em>" + UNIT[k] + "</em></span></button></li>";
+      return '<li data-row="' + k + '"><button type="button" data-key="' + k + '" aria-describedby="tip-' + k + '" aria-label="' + esc(rowLabel(k, st)) + '"><span><span class="name">' + SHORT[k] + '</span><span class="say ' + st.tone + '">' + esc(st.say) + "</span></span>" +
+        glass(k, st) + '<span class="val num"><strong>' + valText(st) + "</strong><em>" + UNIT[k] + '</em></span></button><span class="tip" role="tooltip" id="tip-' + k + '">' + esc(C[k].linked) + "</span></li>";
     }).join("");
     // Page order: district name, map, year slider, the data, then the aquifer breakdown.
     return header() +
@@ -438,6 +461,7 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
       li.querySelector("button").setAttribute("aria-label", rowLabel(k, st));
       f.setAttribute("class", "fill " + st.tone); f.style.transform = "scaleY(" + fillScale(st).toFixed(3) + ")";
     });
+    refreshRanking();
   }
   function stopPlay() {
     if (playTimer) clearInterval(playTimer);
@@ -554,7 +578,7 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
   function render() {
     var v = state.view;
     if (v !== "home" && v !== "compare" && !byId(state.district)) v = "home";
-    if (mapObj) { mapObj.remove(); mapObj = null; } // before its container is replaced
+    if (mapObj) { mapObj.remove(); mapObj = null; geoLayer = null; } // before its container is replaced
     app.innerHTML = v === "detail" ? detail() : v === "filter" ? filter() : v === "compare" ? compare() : v === "notes" ? notes() : home();
     initMap();
   }
@@ -699,11 +723,77 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
       .catch(function (e) { setMsg(e.message === "none" ? "No match for that address. Add the town and NY, or pick your district from the list." : "Address search can't reach the map right now. Pick your district from the list.", true); });
   }
 
+  // ---- Ranking: each district's result as a share of its limit ----
+  // "Overall" uses the district's worst result that year (the one closest to, or furthest over, its limit). No made-up score.
+  var TONE_RANK = { quietc: 0, good: 1, watch: 2, over: 3 };
+  var MAX_YEAR = D.districts.map(latestYear).sort().pop();
+  function rating(d, key, year) {
+    var dv = upTo(d, year), best = null;
+    (key === "overall" ? ORDER : [key]).forEach(function (k) {
+      var st = status(k, dv); if (!st.latest) return;
+      var r = st.latest.stale ? 0 : st.r, n = TONE_RANK[st.tone];
+      if (!best || n > best.n || (n === best.n && r > best.r)) best = { k: k, r: r, n: n, tone: st.tone, st: st };
+    });
+    return best;
+  }
+  function rankYear() { return state.view === "home" && byId(state.district) ? state.year : MAX_YEAR; }
+  function ranked() {
+    var y = rankYear();
+    return D.districts.map(function (d) { return { d: d, x: rating(d, state.rank, y), last: latestYear(upTo(d, y)) }; })
+      .sort(function (a, b) { return !a.x ? 1 : !b.x ? -1 : a.x.n - b.x.n || a.x.r - b.x.r; });
+  }
+  function rateText(x) {
+    if (!x) return "No data for " + rankYear();
+    var st = x.st, v = st.latest, k = x.k;
+    var what = (state.rank === "overall" ? "worst: " + SHORT[k] + " " : "") + valText(st) + " " + UNIT[k];
+    var share = v.stale ? "not listed since " + v.y : k === "lead" ? "90th pct, AL 15" : v.v === 0 ? "not detected" : pct(x.r);
+    return (TAG[x.tone] || "Not listed") + " · " + what + " · " + share;
+  }
+  function rankingHTML() {
+    var y = rankYear();
+    return ranked().map(function (o, i) {
+      var old = o.last && o.last < y ? " · latest report " + o.last : "";
+      return '<li><button type="button" data-go="' + o.d.id + '"' + (o.d.id === state.district ? ' aria-current="true"' : "") + '><span class="rk-n">' + (i + 1) + '</span><span class="rk-name">' + esc(o.d.name) + '</span><span class="say ' + (o.x ? o.x.tone : "quietc") + '">' + esc(rateText(o.x) + old) + "</span></button></li>";
+    }).join("");
+  }
+  function rankNote() {
+    var y = rankYear();
+    return "Ranked for " + y + ", best first. " + (state.rank === "overall" ? "Overall = each district's worst result that year as a share of its limit." : "By the highest " + C[state.rank].name + " result as a share of New York's limit.") +
+      " Gray dashed outlines are not in TapTrack yet. Tap a district to open it. Outlines: EPA service area map.";
+  }
+
   // ---- District map (Leaflet + OpenStreetMap, outlines from EPA) ----
-  var mapObj = null;
+  var mapObj = null, geoLayer = null, mapTok = {};
   function mapHTML(title) {
-    return '<section class="mapsec"><h2>' + esc(title) + '</h2><div class="map" id="map" role="region" aria-label="Map of water district outlines. You can also pick your district from the list at the top."></div>' +
-      '<p class="basis map-note">Solid outlines have full history in TapTrack. Dashed ones are coming next. Tap a district to open it. Outlines: EPA service area map.</p></section>';
+    var keys = ["overall"].concat(ORDER);
+    return '<section class="mapsec"><h2>' + esc(title) + '</h2>' +
+      '<div class="chips rank-by" role="group" aria-label="Rate districts by">' + keys.map(function (k) { return '<button type="button" class="chip" data-rk="' + k + '" aria-pressed="' + (state.rank === k) + '"' + (k === "overall" ? "" : ' title="' + esc(C[k].linked) + '"') + ">" + (k === "overall" ? "Overall" : SHORT[k]) + "</button>"; }).join("") + "</div>" +
+      '<div class="map" id="map" role="region" aria-label="Map of water districts colored by rating. The same ranking is listed below the map."></div>' +
+      '<div class="map-legend" aria-hidden="true"><span><i style="background:var(--good)"></i>OK</span><span><i style="background:var(--watch)"></i>Watch</span><span><i style="background:var(--over)"></i>Over limit</span><span><i style="background:transparent;box-shadow:inset 0 0 0 1.5px var(--muted)"></i>Not in TapTrack yet</span></div>' +
+      '<ol class="ranking" id="ranking" aria-live="polite">' + rankingHTML() + "</ol>" +
+      '<p class="basis map-note" id="rank-note">' + esc(rankNote()) + "</p></section>";
+  }
+  function mapStyle(pwsid, rates) {
+    var d = byPws(pwsid), me = d && d.id === state.district, x = rates[pwsid];
+    if (!d) return { color: mapTok.muted, weight: 1.5, dashArray: "5 5", fillColor: mapTok.muted, fillOpacity: 0.04 };
+    var c = x ? mapTok[x.tone] || mapTok.muted : mapTok.muted;
+    return { color: me ? mapTok.ink : c, weight: me ? 4 : 2, dashArray: null, fillColor: c, fillOpacity: me ? 0.55 : 0.4 };
+  }
+  function mapTip(pwsid, rates) {
+    var d = byPws(pwsid), o = other(pwsid);
+    return d ? esc(d.name + " · " + rateText(rates[pwsid])) : esc((o || { name: pwsid }).name + " · not in TapTrack yet");
+  }
+  // Recolor the map and redo the ranking for the current year and "rate by" choice.
+  function refreshRanking() {
+    var y = rankYear(), rates = {}, el;
+    D.districts.forEach(function (d) { rates[d.pwsid] = rating(d, state.rank, y); });
+    if ((el = document.getElementById("ranking"))) el.innerHTML = rankingHTML();
+    if ((el = document.getElementById("rank-note"))) el.textContent = rankNote();
+    app.querySelectorAll("[data-rk]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.rk === state.rank)); });
+    if (geoLayer) geoLayer.eachLayer(function (l) {
+      var p = l.feature.properties.pwsid;
+      l.setStyle(mapStyle(p, rates)); l.setTooltipContent(mapTip(p, rates));
+    });
   }
   function initMap() {
     if (mapObj) { mapObj.remove(); mapObj = null; }
@@ -711,21 +801,22 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
     if (!window.L) { el.outerHTML = '<p class="basis">The map could not load. Pick your district from the list at the top.</p>'; return; }
     var cs = getComputedStyle(document.documentElement);
     function tok(n) { return cs.getPropertyValue(n).trim(); }
-    var cur = byId(state.district), blue = tok("--aquifer"), muted = tok("--muted");
-    // Highlight the open district, or the one under the address pin even if TapTrack doesn't cover it yet.
-    var focusId = cur ? cur.pwsid : state.pin ? districtAt(state.pin[1], state.pin[0]) : null;
+    mapTok = { good: tok("--good"), watch: tok("--watch"), over: tok("--over"), muted: tok("--muted"), ink: tok("--ink") };
+    var y = rankYear(), rates = {};
+    D.districts.forEach(function (d) { rates[d.pwsid] = rating(d, state.rank, y); });
+    // A district under the address pin that TapTrack doesn't cover yet still gets a heavier outline.
+    var pinId = state.pin ? districtAt(state.pin[1], state.pin[0]) : null;
     mapObj = L.map(el, { scrollWheelZoom: false });
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(mapObj);
-    var mine = null;
-    var layer = L.geoJSON(B, {
+    geoLayer = L.geoJSON(B, {
       style: function (f) {
-        var p = f.properties.pwsid, has = !!byPws(p), me = focusId === p;
-        return me ? { color: blue, weight: 3.5, fillColor: blue, fillOpacity: 0.3, dashArray: has ? null : "5 5" } : has ? { color: blue, weight: 2, fillColor: blue, fillOpacity: 0.08 } : { color: muted, weight: 1.5, dashArray: "5 5", fillColor: muted, fillOpacity: 0.04 };
+        var p = f.properties.pwsid, s = mapStyle(p, rates);
+        if (p === pinId && !byPws(p)) { s.weight = 3.5; s.color = mapTok.ink; s.fillOpacity = 0.15; }
+        return s;
       },
       onEachFeature: function (f, lyr) {
         var p = f.properties.pwsid, d = byPws(p), o = other(p);
-        if (focusId === p) mine = lyr;
-        lyr.bindTooltip(esc((d || o || { name: p }).name) + (d ? "" : " (coming next)"), { sticky: true });
+        lyr.bindTooltip(mapTip(p, rates), { sticky: true });
         lyr.on("click", function () {
           setTimeout(function () { // let Leaflet finish the click before the page redraws
             if (d) choose(d.id);
@@ -734,10 +825,10 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
         });
       }
     });
-    // Leaflet needs a view before it can draw outlines, so fit first, then add.
-    mapObj.fitBounds((mine || layer).getBounds(), { padding: [16, 16] });
-    layer.addTo(mapObj);
-    if (state.pin) L.circleMarker(state.pin, { radius: 8, color: tok("--ink"), weight: 3, fillColor: tok("--focus"), fillOpacity: 1 }).bindTooltip("Your address").addTo(mapObj);
+    // Leaflet needs a view before it can draw outlines, so fit first, then add. Show all of NY-03 so the colors compare.
+    mapObj.fitBounds(geoLayer.getBounds(), { padding: [12, 12] });
+    geoLayer.addTo(mapObj);
+    if (state.pin) L.circleMarker(state.pin, { radius: 8, color: mapTok.ink, weight: 3, fillColor: tok("--focus"), fillOpacity: 1 }).bindTooltip("Your address").addTo(mapObj);
   }
 
   app.addEventListener("submit", function (e) { if (e.target.id === "find") { e.preventDefault(); var q = document.getElementById("addr").value.trim(); if (q) findAddress(q); else setMsg("Type an address first, or pick your district.", true); } });
@@ -772,6 +863,7 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
     var b = e.target.closest("button"); if (!b || !app.contains(b)) return;
     if (b.dataset.go) choose(b.dataset.go);
     else if (b.dataset.term) toggleTerm(b);
+    else if (b.dataset.rk) { state.rank = b.dataset.rk; refreshRanking(); }
     else if (b.hasAttribute("data-play")) togglePlay(b);
     else if (b.dataset.key) go("detail", { key: b.dataset.key, pickYear: null });
     else if (b.dataset.view) go(b.dataset.view);

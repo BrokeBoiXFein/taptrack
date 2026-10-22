@@ -92,6 +92,34 @@ test("address lookup finds the right district from the EPA outlines", () => {
   for (const [lon, lat, want] of cases) assert.strictEqual(at(lon, lat), want, lon + "," + lat);
 });
 
+test("ranking lists every district, follows the year slider and the rate-by chips", () => {
+  const p = open("jericho");
+  const w = p.doc.defaultView;
+  const rows = () => [...p.doc.querySelectorAll("#ranking li")].map((li) => li.textContent);
+  assert.strictEqual(rows().length, data.districts.length);
+  const yr = p.doc.getElementById("yr");
+  for (const rk of [...p.doc.querySelectorAll("[data-rk]")].map((b) => b.dataset.rk)) {
+    p.click('[data-rk="' + rk + '"]');
+    assert.strictEqual(p.doc.querySelector('[data-rk="' + rk + '"]').getAttribute("aria-pressed"), "true");
+    for (let y = +yr.min; y <= +yr.max; y++) {
+      yr.value = String(y);
+      yr.dispatchEvent(new w.Event("input", { bubbles: true }));
+      p.check("ranking " + rk + " " + y);
+      assert.strictEqual(rows().length, data.districts.length);
+      assert.match(p.doc.getElementById("rank-note").textContent, new RegExp("Ranked for " + y));
+    }
+  }
+});
+
+test("hovering a contaminant explains what it is linked to", () => {
+  const p = open("jericho");
+  for (const k of Object.keys(data.contaminants)) {
+    const tip = p.doc.getElementById("tip-" + k);
+    assert.ok(tip && /^Linked to: .+ From: /.test(tip.textContent), k + " tooltip");
+    assert.strictEqual(p.doc.querySelector('[data-key="' + k + '"]').getAttribute("aria-describedby"), "tip-" + k);
+  }
+});
+
 test("address box is an accessible dropdown, and the page works without the map library", () => {
   const p = open("jericho");
   const box = p.doc.getElementById("addr");

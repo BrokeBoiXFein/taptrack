@@ -51,7 +51,7 @@ DATE_RE = re.compile(
 NUM_RE = re.compile(r"(?<![A-Za-z\d.])(\d+(?:\.\d+)?)")
 ND_RE = re.compile(r"\bN\.?D\.?\b|non-?detect|not detected", re.I)
 # Heading of a "tested for but not found" list, e.g. "over 130 different contaminants which have been undetected".
-ND_LIST_RE = re.compile(r"contaminants\s+(?:which|that)\s+(?:have\s+been|were)\s+(?:undetected|not\s+detected)", re.I)
+ND_LIST_RE = re.compile(r"contaminants\s+(?:which|that)\s+(?:have\s+been|were)\s+(?:undetected|not\s+detected)|tested\s+for\s+but\s+not\s+detected", re.I)
 
 
 def fetch(src):
@@ -170,8 +170,11 @@ def check(district_id=None, year=None):
                 hits = found[key]
                 nums = sorted({x for p in hits for x in p["nums"]})
                 units = sorted({u for p in hits for u in p["units"]})
-                if have is None:
-                    status = "listed ND, JSON blank" if nd_list[key] else ("report has rows, JSON blank" if nums else "-")
+                lead_seen = key == "lead" and any(abs(x - v) < 1e-9 for x in nums for v in d["series"].get("lead", {}).values())
+                if have is None and lead_seen:
+                    status = "-"  # lead is sampled every 3 years; reports repeat it, and TapTrack files it under the sampling year
+                elif have is None:
+                    status = "listed ND, JSON blank" if nd_list[key] and key != "lead" else ("report has rows, JSON blank" if nums else "-")
                 elif have == 0:
                     status = ("match (ND)" if any(p["nd"] for p in hits) else "match (ND list)" if nd_list[key]
                               else "NOT FOUND" if not hits else "MISMATCH")

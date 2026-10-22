@@ -1,7 +1,7 @@
 {
  "meta": {
   "app": "TapTrack",
-  "updated": "2026-10-20",
+  "updated": "2026-10-22",
   "valueRule": "Each yearly value is the highest result the district reported for that year (its worst well or entry point), copied from the district's Annual Drinking Water Quality Report. It is not what every home receives.",
   "transcriptionNote": "Values were transcribed from the district PDFs. Spot-check each against the linked report before the final submission."
  },
@@ -15,7 +15,8 @@
    "what": "An industrial solvent that also shows up as a byproduct in some soaps, shampoos and detergents. It moves easily through Long Island's sandy soil into the aquifer.",
    "why": "EPA classifies it as a likely human carcinogen with long-term exposure. The concern is decades of drinking it, not a single glass.",
    "fix": "Most home filters do not remove it well, including standard carbon pitchers. The main fix is the district's Advanced Oxidation Process (AOP) treatment at the well.",
-   "filter": "Few home filters are certified for 1,4-dioxane. Check a filter's NSF listing for this chemical by name before buying."
+   "filter": "Few home filters are certified for 1,4-dioxane. Check a filter's NSF listing for this chemical by name before buying.",
+   "linked": "Linked to: liver and kidney damage; likely cancer risk with long-term exposure (EPA). From: industrial solvents, some soaps and detergents."
   },
   "pfoa": {
    "name": "PFOA (a PFAS \"forever chemical\")",
@@ -26,7 +27,8 @@
    "what": "A man-made chemical once used in non-stick pans, stain-resistant fabric and firefighting foam. It does not break down in the environment.",
    "why": "Long-term exposure is linked to some cancers, thyroid and immune effects, and higher cholesterol.",
    "fix": "Districts remove it with granular activated carbon (GAC) or ion exchange at the well.",
-   "filter": "Look for NSF/ANSI 53 or 58 certification that lists PFOA. Under-sink reverse osmosis and certified carbon block filters work best."
+   "filter": "Look for NSF/ANSI 53 or 58 certification that lists PFOA. Under-sink reverse osmosis and certified carbon block filters work best.",
+   "linked": "Linked to: kidney and testicular cancer, thyroid disease, high cholesterol, weaker vaccine response. From: nonstick and stain-proof coatings, firefighting foam."
   },
   "pfos": {
    "name": "PFOS (a PFAS \"forever chemical\")",
@@ -37,7 +39,8 @@
    "what": "A PFAS chemical once used in Scotchgard-type coatings and firefighting foam.",
    "why": "Long-term exposure is linked to immune, thyroid and developmental effects.",
    "fix": "Same treatment as PFOA: granular activated carbon (GAC) or ion exchange at the well.",
-   "filter": "Look for NSF/ANSI 53 or 58 certification that lists PFOS."
+   "filter": "Look for NSF/ANSI 53 or 58 certification that lists PFOS.",
+   "linked": "Linked to: immune and thyroid effects, high cholesterol, lower birth weight. From: stain-proof coatings, firefighting foam."
   },
   "nitrate": {
    "name": "Nitrate",
@@ -48,7 +51,8 @@
    "what": "Comes mostly from lawn fertilizer and septic or cesspool systems seeping into groundwater.",
    "why": "The main risk is to babies under six months, whose blood can carry less oxygen at high levels. Above half the limit, reports must include an infant warning.",
    "fix": "Districts treat it with ion exchange or blend water from cleaner wells.",
-   "filter": "Carbon filters do not remove nitrate. Reverse osmosis certified to NSF/ANSI 58 for nitrate does."
+   "filter": "Carbon filters do not remove nitrate. Reverse osmosis certified to NSF/ANSI 58 for nitrate does.",
+   "linked": "Linked to: blue baby syndrome in infants under 6 months. From: lawn fertilizer, cesspools and septic systems."
   },
   "lead": {
    "name": "Lead (90th percentile at homes)",
@@ -59,7 +63,8 @@
    "what": "Lead comes from old pipes and plumbing inside homes and service lines, not usually from the wells. Testing is done at taps in homes.",
    "why": "No safe level for children. It can affect learning and development.",
    "fix": "Districts add chemicals so pipes corrode less. Replacing lead service lines is the permanent fix.",
-   "filter": "NSF/ANSI 53 filters certified for lead work, including many pitchers. Run the cold tap 30 seconds to 2 minutes if water sat overnight."
+   "filter": "NSF/ANSI 53 filters certified for lead work, including many pitchers. Run the cold tap 30 seconds to 2 minutes if water sat overnight.",
+   "linked": "Linked to: lower IQ and learning problems in children, high blood pressure in adults. From: old pipes, solder and faucets in homes."
   }
  },
  "districts": [
@@ -241,15 +246,317 @@
     "2020": "https://plainviewwater.org/wp-content/uploads/2021/05/PWD-2020-Water-Quality-Statement-1.pdf",
     "2019": "https://plainviewwater.org/wp-content/uploads/2020/05/PWD-2019-Water-Quality-Statement.pdf"
    }
-  }
- ],
- "otherDistricts": [
+  },
   {
+   "id": "hicksville",
    "pwsid": "NY2902829",
    "name": "Hicksville Water District",
    "population": 48000,
-   "reportsPage": "https://hicksvillewater.org/hwd/water-quality-report/"
+   "wells": "14 wells (Magothy aquifer)",
+   "reportsPage": "https://hicksvillewater.org/hwd/water-quality-report/",
+   "phone": "(516) 931-0184",
+   "hasTrend": true,
+   "series": {
+    "dioxane": {
+     "2019": 24.0,
+     "2020": 1.7,
+     "2021": 2.1,
+     "2022": 1.8,
+     "2023": 0.91,
+     "2024": 0.82,
+     "2025": 0.28
+    },
+    "pfoa": {
+     "2019": 11.9,
+     "2020": 9.6,
+     "2021": 6.1,
+     "2022": 6.9,
+     "2023": 7.3,
+     "2024": 4.14,
+     "2025": 0
+    },
+    "pfos": {
+     "2019": 111.0,
+     "2020": 9.3,
+     "2021": 4.9,
+     "2022": 6.6,
+     "2023": 3.3,
+     "2024": 0,
+     "2025": 0
+    },
+    "nitrate": {
+     "2019": 9.7,
+     "2020": 9.2,
+     "2021": 7.0,
+     "2022": 7.2,
+     "2023": 8.5,
+     "2024": 7.3,
+     "2025": 8.3
+    },
+    "lead": {
+     "2017": 0,
+     "2020": 0,
+     "2023": 0
+    }
+   },
+   "timeline": [
+    {
+     "date": "2019",
+     "text": "Highest 1,4-dioxane result 24.0 µg/L, before New York had a limit."
+    },
+    {
+     "date": "2020",
+     "text": "New York's 1,4-dioxane, PFOA and PFOS limits take effect. The district gets a deferral while it builds treatment."
+    },
+    {
+     "date": "2023",
+     "text": "Deferral ends in August. Highest 1,4-dioxane result 0.91 µg/L."
+    },
+    {
+     "date": "2025",
+     "text": "Highest 1,4-dioxane result 0.28 µg/L. PFOA and PFOS listed as not detected."
+    }
+   ],
+   "notes": [
+    "The 2019 report lists PFOS as \"ND - 111.0(6)\" ng/L, eleven times New York's later limit of 10, but footnote (6) is missing from the report: the footnotes skip from (5) to (7). TapTrack shows 111.0 as printed. Ask the district what the footnote says.",
+    "The only copy of the 2020 report on the district's website is a file named \"DRAFT3\".",
+    "PFOS in 2024 and 2025, and PFOA in 2025, are listed among contaminants tested but not detected."
+   ],
+   "reports": {
+    "2025": "https://hicksvillewater.org/wp-content/uploads/2026/05/26.04.28-2025-HKWD-Drinking-Water-Quality-Report-FINAL1.pdf",
+    "2024": "https://hicksvillewater.org/wp-content/uploads/2025/05/25.04.22-2024-HKWD-Drinking-Water-Quality-Report-FINAL1.pdf",
+    "2023": "https://hicksvillewater.org/wp-content/uploads/2024/05/2023-HKWD-Drinking-Water-Quality-Report.pdf",
+    "2022": "https://hicksvillewater.org/wp-content/uploads/2023/05/2022-hkwd-drinking-water-quality-report.pdf",
+    "2021": "https://hicksvillewater.org/wp-content/uploads/2022/05/22.05.06-2021-HKWD-Drinking-Water-Quality-Report-w-Appendix-A-FINAL1.pdf",
+    "2020": "https://hicksvillewater.org/wp-content/uploads/2021/05/21.05.05-2020-HKWD-Drinking-Water-Quality-Report-DRAFT3-w-Deferral.pdf",
+    "2019": "https://hicksvillewater.org/wp-content/uploads/2020/05/2019waterqualityreport.pdf"
+   }
   },
+  {
+   "id": "glencove",
+   "pwsid": "NY2902826",
+   "name": "City of Glen Cove",
+   "population": 28000,
+   "wells": "6 wells",
+   "reportsPage": "https://glencoveny.gov/public-works",
+   "phone": "(516) 676-2238",
+   "hasTrend": true,
+   "series": {
+    "dioxane": {
+     "2019": 0.15,
+     "2020": 0.14,
+     "2021": 0.11,
+     "2022": 0.13,
+     "2023": 0.14,
+     "2024": 0.13
+    },
+    "pfoa": {
+     "2020": 3.1,
+     "2021": 5.8,
+     "2022": 6.1,
+     "2023": 10.0,
+     "2024": 7.04,
+     "2025": 10.1
+    },
+    "pfos": {
+     "2021": 2.2,
+     "2022": 2.2,
+     "2023": 5.8,
+     "2024": 2.45,
+     "2025": 4.86
+    },
+    "nitrate": {
+     "2019": 6.8,
+     "2020": 8.2,
+     "2021": 7.3,
+     "2022": 6.5,
+     "2023": 6.4,
+     "2024": 6.0,
+     "2025": 5.9
+    },
+    "lead": {
+     "2017": 3.5,
+     "2020": 3.2,
+     "2023": 3.9
+    }
+   },
+   "timeline": [
+    {
+     "date": "2023",
+     "text": "Highest PFOA result 10.0 ng/L, right at New York's limit."
+    },
+    {
+     "date": "2025",
+     "text": "Report flags a PFOA violation: 10.1 ng/L, over the limit of 10."
+    }
+   ],
+   "notes": [
+    "The 2025 report flags a PFOA violation (10.1 ng/L) and has no 1,4-dioxane row at all, after six years of results between 0.11 and 0.15 µg/L.",
+    "The 2019 report gives no PFOA or PFOS results, and the 2020 report has PFOA but no PFOS row.",
+    "The same June to August 2020 lead sampling is reported as 3.2 µg/L in the 2020 report and 3.0 in the 2021 and 2022 reports. TapTrack uses 3.2, from the first report after the sampling."
+   ],
+   "reports": {
+    "2025": "https://cdn.townweb.com/glencoveny.gov/wp-content/uploads/2026/05/2025-AWQR_Glen-Cove-Quality-Water-Drinking-Report.pdf",
+    "2024": "https://cdn.townweb.com/glencoveny.gov/wp-content/uploads/2025/05/25.05.19-2024-GLCV-Drinking-Water-Quality-Report-FINAL1.pdf",
+    "2023": "https://cdn.townweb.com/glencoveny.gov/wp-content/uploads/2024/05/24.05.09_-_2023_GLCV_Drinking_Water_Quality_Report_FINAL1.pdf",
+    "2022": "https://cdn.townweb.com/glencoveny.gov/wp-content/uploads/2023/05/23.05.16-2022-GLCV-Drinking-Water-Quality-Report-1.pdf",
+    "2021": "https://cdn.townweb.com/glencoveny.gov/wp-content/uploads/2022/05/2021-AWQR.pdf",
+    "2020": "https://cdn.townweb.com/glencoveny.gov/wp-content/uploads/2021/05/21.05.13-2020-GLCV-Drinking-Water-Quality-Report-FINAL1.pdf",
+    "2019": "https://cdn.townweb.com/glencoveny.gov/wp-content/uploads/2020/12/2019-Water-Quality-Report.pdf"
+   }
+  },
+  {
+   "id": "portwashington",
+   "pwsid": "NY2912267",
+   "name": "Port Washington Water District",
+   "population": 34000,
+   "wells": "12 wells (Upper glacial, Port Washington, Magothy and Lloyd aquifers)",
+   "reportsPage": "https://pwwd.org/about/water-quality/",
+   "phone": "(516) 767-0171",
+   "hasTrend": true,
+   "series": {
+    "dioxane": {
+     "2019": 4.5,
+     "2020": 6.2,
+     "2023": 3.3,
+     "2024": 0.96,
+     "2025": 0.35
+    },
+    "pfoa": {
+     "2019": 14.9,
+     "2020": 14.8,
+     "2023": 9.2,
+     "2024": 10.9,
+     "2025": 8.03
+    },
+    "pfos": {
+     "2019": 9.93,
+     "2020": 5.5,
+     "2023": 6.3,
+     "2024": 6.5,
+     "2025": 2.7
+    },
+    "nitrate": {
+     "2019": 6.7,
+     "2020": 7.2,
+     "2023": 5.4,
+     "2024": 6.5,
+     "2025": 5.8
+    },
+    "lead": {
+     "2018": 5,
+     "2021": 2,
+     "2024": 3.6
+    }
+   },
+   "timeline": [
+    {
+     "date": "2020",
+     "text": "New York's 1,4-dioxane, PFOA and PFOS limits take effect. The district gets a deferral while it builds treatment."
+    },
+    {
+     "date": "2023",
+     "text": "Deferral expires. Wells with high 1,4-dioxane stay offline while treatment is built. Highest result 3.3 µg/L."
+    },
+    {
+     "date": "2024",
+     "text": "Report flags a PFOA violation: 10.9 ng/L, over the limit of 10."
+    },
+    {
+     "date": "2025",
+     "text": "Highest 1,4-dioxane result 0.35 µg/L, highest PFOA 8.03 ng/L."
+    }
+   ],
+   "notes": [
+    "The 2021 and 2022 reports are not posted on the district's website, and TapTrack could not find copies elsewhere. Those years are blank.",
+    "The 2024 report's text says nitrate was \"detected at 6.0 mg/L\", but its table lists 6.5 mg/L. TapTrack uses the table.",
+    "The report says the district serves about 30,000 people. TapTrack uses EPA's count of 34,000, like every other district."
+   ],
+   "reports": {
+    "2025": "https://pwwd.org/wordpress/wp-content/uploads/2026/05/PWWD-2025-ADWQR.pdf",
+    "2024": "https://pwwd.org/wordpress/wp-content/uploads/2025/06/PWWD_2024-ADWQR.pdf",
+    "2023": "https://pwwd.org/wordpress/wp-content/uploads/2024/05/PWWD_2023_ADWQR.pdf",
+    "2020": "https://pwwd.org/wordpress/wp-content/uploads/2021/05/PWWD_Spring2020_Water_Quality_Report.pdf",
+    "2019": "https://pwwd.org/wordpress/wp-content/uploads/2020/05/PWWD_Spring2019ADWQR.pdf"
+   }
+  },
+  {
+   "id": "manhasset",
+   "pwsid": "NY2902836",
+   "name": "Manhasset-Lakeville Water District",
+   "population": 43000,
+   "wells": "14 wells (Magothy and Lloyd aquifers)",
+   "reportsPage": "https://mlwd.net/css_annual.php",
+   "phone": "(516) 466-4416",
+   "hasTrend": true,
+   "series": {
+    "dioxane": {
+     "2019": 2.4,
+     "2021": 0.87,
+     "2022": 0.92,
+     "2023": 0.71,
+     "2024": 0.65,
+     "2025": 0.73
+    },
+    "pfoa": {
+     "2019": 0,
+     "2021": 5.4,
+     "2022": 6.8,
+     "2023": 8.0,
+     "2024": 8.6,
+     "2025": 7.93
+    },
+    "pfos": {
+     "2019": 0,
+     "2021": 4.4,
+     "2022": 5.9,
+     "2023": 6.3,
+     "2024": 5.9,
+     "2025": 0
+    },
+    "nitrate": {
+     "2019": 6.8,
+     "2021": 6.3,
+     "2022": 6.7,
+     "2023": 5.5,
+     "2024": 7.1,
+     "2025": 6.3
+    },
+    "lead": {
+     "2017": 5.3,
+     "2020": 0
+    }
+   },
+   "timeline": [
+    {
+     "date": "2019",
+     "text": "Highest 1,4-dioxane result 2.4 µg/L. Two new 1,4-dioxane treatment plants under construction."
+    },
+    {
+     "date": "2021",
+     "text": "Highest 1,4-dioxane result 0.87 µg/L, under New York's limit of 1."
+    },
+    {
+     "date": "2025",
+     "text": "Highest 1,4-dioxane result 0.73 µg/L. PFOS listed as not detected."
+    }
+   ],
+   "notes": [
+    "TapTrack could not find the 2020 report on the district's website or anywhere else. That year is blank.",
+    "The 2019 report is hosted by the New York State Department of Health, not the district. Its 1,4-dioxane result (2.4 µg/L) is from an October 2018 sample.",
+    "The 2023 report's lead row gives only a range (ND to 1.6 µg/L) and no 90th percentile, even though the table's footnote describes one. TapTrack leaves 2023 lead blank."
+   ],
+   "reports": {
+    "2025": "https://mlwd.net/pdf/2025%20WaterQualityReport.pdf",
+    "2024": "https://mlwd.net/pdf/2024%20WaterQualityReport.pdf",
+    "2023": "https://www.mlwd.net/pdf/2023%20WaterQualityReport-8pgs_v01_web.pdf",
+    "2022": "https://www.mlwd.net/pdf/2022%20WaterQualityReport.pdf",
+    "2021": "https://mlwd.net/pdf/2021%20Water%20Quality%20Report.pdf",
+    "2019": "https://health.ny.gov/environmental/water/drinking/nyc_nassau_county_feasibility_study/Annual%20Water%20Quality%20Reports_MLWD_2019.pdf"
+   }
+  }
+ ],
+ "otherDistricts": [
   {
    "pwsid": "NY2902817",
    "name": "Bethpage Water District",
@@ -259,11 +566,6 @@
    "pwsid": "NY2902844",
    "name": "Oyster Bay Water District",
    "population": 8700
-  },
-  {
-   "pwsid": "NY2902826",
-   "name": "City of Glen Cove",
-   "population": 28000
   },
   {
    "pwsid": "NY2902833",
@@ -286,19 +588,9 @@
    "population": 17000
   },
   {
-   "pwsid": "NY2912267",
-   "name": "Port Washington Water District",
-   "population": 34000
-  },
-  {
    "pwsid": "NY2902841",
    "name": "Water Authority of Great Neck North",
    "population": 31400
-  },
-  {
-   "pwsid": "NY2902836",
-   "name": "Manhasset-Lakeville Water District",
-   "population": 43000
   },
   {
    "pwsid": "NY2902815",

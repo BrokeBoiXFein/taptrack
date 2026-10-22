@@ -213,6 +213,28 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
 .map-note { margin-top: 8px; }
 .leaflet-container { font-family: var(--body); }
 .leaflet-tooltip { font-family: var(--body); font-size: 14px; }
+/* "New report should be out" note */
+.due { margin: 18px 0 0; padding: 12px 14px; border: 1.5px solid var(--watch); border-radius: 10px; background: color-mix(in oklab, var(--watch) 7%, var(--ground)); font-family: var(--small); font-size: 14px; }
+.due b { font-family: var(--body); font-size: 16px; display: block; }
+.print-only { display: none; }
+
+/* Print: a one-page summary to bring to a district meeting */
+@media print {
+  @page { margin: 14mm; }
+  body { font-size: 11pt; color: #000; background: #fff; }
+  .top, .mapsec, .yearctl, .terms, .actions, .glass-key, .log .tip, .back, .pick-years, .band.ground, .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  .band { background: #fff !important; color: #000 !important; border-bottom: 2px solid #000; }
+  .band small { color: #333 !important; }
+  .band .wrap { padding-block: 0 8px !important; }
+  .wrap { max-width: none; padding: 0; }
+  .log li { break-inside: avoid; }
+  .log button { padding: 6px 0; }
+  .glass, .say, .chart svg { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .chart polyline.series { animation: none !important; stroke-dashoffset: 0 !important; }
+  .foot a[href^="http"]::after, .print-only a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 8pt; word-break: break-all; }
+  .due { border-color: #000; background: #fff; }
+}
 @media (prefers-reduced-motion: reduce) { .glass .fill { transition: none; } }
 @media (prefers-reduced-motion: no-preference) {
   .chart polyline.series { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw 900ms ease-out forwards; }
@@ -410,12 +432,14 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
     // Page order: district name, map, year slider, the data, then the aquifer breakdown.
     return header() +
       '<div class="band"><div class="wrap" style="padding-bottom:22px"><small>Your water comes from</small><h1>' + esc(d.name) + '</h1><small class="num">' + d.population.toLocaleString() + " people. District ID " + d.pwsid + "</small></div></div>" +
-      '<div class="wrap">' + mapHTML("Where " + d.name + " is") + yearCtl(d) +
+      '<div class="wrap">' + dueBanner(d, new Date()) + mapHTML("Where " + d.name + " is") + yearCtl(d) +
       '<p class="verdict" id="verdict" aria-live="polite">' + esc(verdict(dv)) + '</p><p class="basis" id="basis">' + basis(d) + "</p>" +
       '<ul class="log">' + rows + "</ul>" +
       '<p class="glass-key">' + glass("key", { tone: "good", latest: { v: 1 }, r: 0.5 }) + "<span>Glass = share of NY limit. Dashed line = limit. Tap a row for every year.</span></p>" +
       termBar(["highest", "limit", "nd", "ppb", "ppt", "ppm", "p90"]) +
-      '<div class="actions"><button type="button" data-view="filter">Do I need a filter?</button><button type="button" class="quiet" data-view="compare">Compare with another district</button></div></div>' +
+      '<div class="actions"><button type="button" data-view="filter">Do I need a filter?</button><button type="button" class="quiet" data-view="compare">Compare with another district</button>' +
+      '<button type="button" class="quiet" data-print>Print a summary</button><button type="button" class="quiet" data-share>Copy link to this page</button></div>' +
+      printExtras(d) + "</div>" +
       '<section class="band ground" aria-labelledby="ground-h"><div class="wrap"><h2 id="ground-h">Where your water comes from underground</h2>' +
       "<p>Long Island gets all its tap water from wells drilled into layers of sand deep underground, called aquifers. Rain soaks down through them over years, so what goes on the ground, like fertilizer, cesspools and old spills, can end up in the water.</p>" +
       '<dl class="layers"><div><dt><i style="background:var(--sand)"></i>Upper glacial</dt><dd>Closest to the surface. Easiest for pollution to reach.</dd></div>' +
@@ -423,6 +447,19 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
       '<div><dt><i style="background:var(--lloyd)"></i>Lloyd</dt><dd>The deepest and oldest water, under a clay layer that helps protect it.</dd></div></dl>' +
       strata(d) + "</div></section>" +
       '<div class="wrap">' + foot(d) + "</div>";
+  }
+  // Reports for year Y come out by June 1 of Y+1. So after June 1, last year's report should be posted.
+  function expectedYear(now) { return String(now.getMonth() >= 5 ? now.getFullYear() - 1 : now.getFullYear() - 2); }
+  function dueBanner(d, now) {
+    var exp = expectedYear(now), last = latestYear(d);
+    if (last >= exp) return "";
+    return '<div class="due" role="note"><b>The ' + exp + " report should be out.</b>Districts post each year's report by June 1 of the next year. TapTrack has reports up to " + last + '. <a href="' + d.reportsPage + '" target="_blank" rel="noopener">Check the district\'s reports page</a>.</div>';
+  }
+  // Only on paper: what to ask the district about, and how to reach it.
+  function printExtras(d) {
+    return '<section class="print-only"><h2>Questions to ask the district</h2><ul class="notes">' + d.notes.map(function (n) { return "<li>" + esc(n) + "</li>"; }).join("") + "</ul>" +
+      "<p>" + (d.phone ? "Phone " + esc(d.phone) + ". " : "") + 'Reports: <a href="' + d.reportsPage + '">' + esc(d.reportsPage) + "</a></p>" +
+      "<p>Printed from TapTrack on " + new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) + ". " + esc(location.href.split("?")[0]) + "</p></section>";
   }
   function rowLabel(k, st) { return SHORT[k] + ": " + valText(st) + " " + UNIT[k] + ". " + st.say + " Open every year."; }
   function basis(d) {
@@ -500,6 +537,7 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
       (tl.length ? '<section><h2>What the district did</h2><ol class="steps">' + tl.map(function (t) { return "<li><b>" + esc(t.date) + "</b><span>" + esc(t.text) + "</span></li>"; }).join("") + "</ol></section>" : "") +
       "<section><h2>What is it?</h2><p>" + esc(c.what) + "</p><h2>Should I worry?</h2><p>" + esc(c.why) + "</p><h2>How does it get fixed?</h2><p>" + esc(c.fix) + "</p><h2>Can a home filter help?</h2><p>" + esc(c.filter) + "</p><h2>What are the limits?</h2><p>" + esc(c.fedNote) + "</p></section>" +
       '<section><h2>Every year, from the source</h2><div class="years">' + years(d.reports).map(function (y) { return '<a href="' + d.reports[y] + '" target="_blank" rel="noopener">' + y + (s[y] !== undefined ? ": " + fmt(s[y]) : ": not listed") + "</a>"; }).join("") + "</div></section>" +
+      '<div class="actions"><button type="button" class="quiet" data-print>Print this page</button><button type="button" class="quiet" data-share>Copy link to this page</button></div>' +
       foot(d) + "</div>";
   }
 
@@ -576,7 +614,47 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
     app.innerHTML = v === "detail" ? detail() : v === "filter" ? filter() : v === "compare" ? compare() : v === "notes" ? notes() : home();
     initMap();
   }
-  function go(view, extra) { stopPlay(); state.view = view; for (var k in extra || {}) state[k] = extra[k]; render(); window.scrollTo(0, 0); }
+  function go(view, extra) { stopPlay(); state.view = view; for (var k in extra || {}) state[k] = extra[k]; render(); syncHash(true); window.scrollTo(0, 0); }
+
+  // ---- Shareable links: #jericho, #jericho-dioxane, #jericho-filter, #jericho-notes, #compare ----
+  var PAGES = ["filter", "compare", "notes"], lastHash = null;
+  function hashFor() {
+    var d = byId(state.district);
+    if (state.view === "compare") return d ? d.id + "-compare" : "compare";
+    if (!d) return "";
+    if (state.view === "detail") return d.id + "-" + state.key;
+    return PAGES.indexOf(state.view) >= 0 ? d.id + "-" + state.view : d.id;
+  }
+  function syncHash(push) {
+    var h = hashFor();
+    lastHash = h;
+    if (h === (location.hash || "").slice(1)) return;
+    try { history[push ? "pushState" : "replaceState"](null, "", h ? "#" + h : location.pathname + location.search); } catch (e) {}
+  }
+  // Open whatever the link points to. Runs on load, on Back/Forward, and when someone edits the link.
+  function applyHash() {
+    var h = decodeURIComponent((location.hash || "").slice(1));
+    if (h === lastHash) return;
+    lastHash = h;
+    var cut = h.indexOf("-"), d = byId(cut < 0 ? h : h.slice(0, cut)), rest = cut < 0 ? "" : h.slice(cut + 1);
+    stopPlay();
+    if (h === "compare") state.view = "compare";
+    else if (!d) state.view = "home";
+    else {
+      if (state.district !== d.id) { state.district = d.id; state.year = latestYear(d); state.pin = null; state.cmpA = null; state.cmpB = null; save(); }
+      if (C[rest]) { state.view = "detail"; state.key = rest; state.pickYear = null; }
+      else state.view = PAGES.indexOf(rest) >= 0 ? rest : "home";
+    }
+    render();
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener("popstate", applyHash);
+  window.addEventListener("hashchange", applyHash);
+  function copyLink(b) {
+    var url = location.href, done = function () { b.textContent = "Link copied"; setTimeout(function () { b.textContent = "Copy link to this page"; }, 2000); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { window.prompt("Copy this link:", url); });
+    else window.prompt("Copy this link:", url);
+  }
   function setMsg(m, err) { state.msg = m; state.msgErr = !!err; var el = document.getElementById("msg"); if (el) { el.textContent = m; el.className = "msg" + (err ? " err" : ""); } }
   function choose(val) {
     if (!val) return;
@@ -859,14 +937,19 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
     else if (b.dataset.term) toggleTerm(b);
     else if (b.dataset.rk) { state.rank = b.dataset.rk; refreshRanking(); }
     else if (b.hasAttribute("data-play")) togglePlay(b);
+    else if (b.hasAttribute("data-print")) window.print();
+    else if (b.hasAttribute("data-share")) copyLink(b);
     else if (b.dataset.key) go("detail", { key: b.dataset.key, pickYear: null });
     else if (b.dataset.view) go(b.dataset.view);
     else if (b.dataset.ck) { state.compareKey = b.dataset.ck; render(); var f = app.querySelector('[data-ck="' + b.dataset.ck + '"]'); if (f) f.focus(); }
   });
 
-  var h = (location.hash || "").slice(1);
-  state.district = byId(h) ? h : load();
+  // Start from the link if it names a page, otherwise from the district this browser picked last time.
+  state.district = load();
   if (byId(state.district)) state.year = latestYear(byId(state.district));
-  render();
+  if ((location.hash || "").length > 1) applyHash();
+  else { render(); syncHash(false); }
+  window.TapTrack.expectedYear = expectedYear; // used by tests
+  window.TapTrack.dueBanner = function (id, now) { return dueBanner(byId(id), now); };
 })();
 </script>

@@ -111,6 +111,37 @@ test("ranking lists every district, follows the year slider and the rate-by chip
   }
 });
 
+test("shareable links open the right page, and clicking updates the link", () => {
+  for (const d of data.districts) {
+    for (const key of Object.keys(data.contaminants)) {
+      const p = open(d.id + "-" + key);
+      p.check("link " + d.id + "-" + key);
+      assert.strictEqual(p.doc.querySelector(".detail h1").textContent, data.contaminants[key].name);
+    }
+    for (const page of ["filter", "notes", "compare"]) {
+      const p = open(d.id + "-" + page);
+      p.check("link " + d.id + "-" + page);
+      assert.ok(p.doc.querySelector(".detail h1"), page);
+    }
+  }
+  const p = open("jericho");
+  p.click('[data-key="nitrate"]');
+  assert.strictEqual(p.doc.defaultView.location.hash, "#jericho-nitrate");
+  p.click('[data-view="home"]');
+  assert.strictEqual(p.doc.defaultView.location.hash, "#jericho");
+  const bad = open("not-a-district");
+  bad.check("unknown link");
+});
+
+test("new report banner: due after June 1, only when the district is behind", () => {
+  const p = open("");
+  const T = p.doc.defaultView.TapTrack;
+  assert.strictEqual(T.expectedYear(new Date(2026, 4, 31)), "2024"); // May 31, 2026: the 2025 report may not be out yet
+  assert.strictEqual(T.expectedYear(new Date(2026, 5, 1)), "2025"); // June 1, 2026
+  assert.strictEqual(T.dueBanner("jericho", new Date(2026, 9, 22)), ""); // has 2025
+  assert.match(T.dueBanner("jericho", new Date(2027, 6, 1)), /The 2026 report should be out/);
+});
+
 test("hovering a contaminant explains what it is linked to", () => {
   const p = open("jericho");
   for (const k of Object.keys(data.contaminants)) {

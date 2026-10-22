@@ -130,6 +130,63 @@ for (const d of data.districts) {
     }
   });
 
+  test(d.id + ": year slider, every year", () => {
+    const p = open(d.id);
+    const w = p.doc.defaultView;
+    const yr = p.doc.getElementById("yr");
+    assert.ok(yr, "slider missing");
+    for (let y = +yr.min; y <= +yr.max; y++) {
+      yr.value = String(y);
+      yr.dispatchEvent(new w.Event("input", { bubbles: true }));
+      p.check(d.id + " year " + y);
+      assert.strictEqual(p.doc.getElementById("yr-out").textContent, String(y));
+      assert.strictEqual(p.doc.querySelectorAll(".log .fill").length, 5);
+      for (const f of p.doc.querySelectorAll(".log .fill")) assert.match(f.style.transform, /^scaleY\(\d(\.\d+)?\)$/, d.id + " " + y + " bad fill");
+    }
+    p.click("[data-play]");
+    assert.strictEqual(p.doc.querySelector("[data-play]").getAttribute("aria-pressed"), "true");
+    p.click("[data-play]");
+    assert.strictEqual(p.doc.querySelector("[data-play]").getAttribute("aria-pressed"), "false");
+  });
+
+  test(d.id + ": word buttons open and close", () => {
+    const p = open(d.id);
+    for (const t of [...p.doc.querySelectorAll(".term")].map((x) => x.dataset.term)) {
+      p.click('.term[data-term="' + t + '"]');
+      const def = p.doc.getElementById("def");
+      assert.ok(!def.hidden && def.textContent.length > 20, t + " did not open");
+      p.check(d.id + " term " + t);
+      p.click('.term[data-term="' + t + '"]');
+      assert.ok(def.hidden, t + " did not close");
+    }
+  });
+
+  test(d.id + ": detail year buttons", () => {
+    const p = open(d.id);
+    for (const key of Object.keys(data.contaminants)) {
+      p.click('[data-key="' + key + '"]');
+      for (const y of [...p.doc.querySelectorAll("button[data-py]")].map((x) => x.dataset.py)) {
+        p.click('button[data-py="' + y + '"]');
+        p.check(d.id + " " + key + " year " + y);
+        assert.match(p.doc.querySelector(".readout").textContent, new RegExp("^" + y + ":"));
+      }
+      p.click('[data-view="home"]');
+    }
+  });
+
+  test(d.id + ": compare any two districts", () => {
+    const p = open(d.id);
+    p.click('[data-view="compare"]');
+    for (const other of data.districts) {
+      const s = p.doc.querySelector('[data-cmp="B"]');
+      s.value = other.id;
+      s.dispatchEvent(new p.doc.defaultView.Event("change", { bubbles: true }));
+      p.check(d.id + " compare with " + other.id);
+      const ths = [...p.doc.querySelectorAll("th")].map((x) => x.textContent);
+      assert.notStrictEqual(ths[1], ths[2], "compared a district with itself");
+    }
+  });
+
   test(d.id + ": report errors page", () => {
     const p = open(d.id);
     p.click('[data-view="notes"]');

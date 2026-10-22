@@ -43,7 +43,7 @@
   --good: #6CC49A; --watch: #E2B254; --over: #F08A7C; color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { background: var(--ground); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; }
+body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; }
 a { color: var(--aquifer); }
 a:hover { color: var(--ink); }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
@@ -74,7 +74,8 @@ button.quiet { background: transparent; color: var(--aquifer); border: 1.5px sol
 
 .log { list-style: none; margin: 8px 0 0; padding: 0; }
 .log li + li { border-top: 1px solid var(--rule); }
-.log button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr) 76px 76px; align-items: center; gap: 12px; width: 100%; padding: 16px 0; cursor: pointer; }
+.log button { all: unset; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr) 34px 72px; align-items: center; gap: 14px; width: 100%; padding: 16px 0; cursor: pointer; }
+.log button:hover .name { text-decoration: underline; text-underline-offset: 3px; }
 .log button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .log .name { font-weight: 700; display: block; }
 .log .say { font-size: 14px; display: block; }
@@ -125,6 +126,48 @@ td { padding: 11px 8px 11px 0; border-bottom: 1px solid var(--rule); vertical-al
 .notes li { margin-bottom: 8px; max-width: 65ch; }
 .other { list-style: none; margin: 0; padding: 0; columns: 2 220px; font-size: 14px; }
 .other li { break-inside: avoid; padding: 4px 0; }
+button:hover { filter: brightness(1.08); }
+button:active { transform: translateY(1px); }
+button.quiet:hover { border-color: var(--aquifer); filter: none; }
+
+/* Year slider: one control drives every number on the district page */
+.yearctl { margin: 22px 0 4px; padding: 14px 16px 8px; background: var(--surface); border: 1.5px solid var(--rule); border-radius: 12px; }
+.yc-top { display: flex; align-items: center; gap: 12px; }
+.yc-top label { font-weight: 700; }
+.yc-top output { font-family: var(--display); font-size: 30px; font-weight: 700; line-height: 1; margin-right: auto; }
+button.small { height: 40px; padding: 0 16px; font-size: 15px; }
+.yearctl input[type="range"] { width: 100%; height: 40px; margin: 8px 0 0; accent-color: var(--aquifer); cursor: pointer; }
+.yc-ticks { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); padding: 0 2px; }
+
+/* The glass: fills toward New York's limit (the dashed line) */
+.glass { display: block; justify-self: center; overflow: visible; }
+.glass .fill { fill: var(--aquifer); transform-box: fill-box; transform-origin: 50% 100%; transition: transform 300ms cubic-bezier(0.25, 1, 0.5, 1); }
+.glass .fill.watch { fill: var(--watch); }
+.glass .fill.over { fill: var(--over); }
+.glass .lim { stroke: var(--over); stroke-width: 1.5; stroke-dasharray: 3 2; }
+.glass .rim { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-linejoin: round; }
+.glass-key { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); margin: 14px 0 0; }
+.glass-key .glass { justify-self: auto; }
+
+/* Tap-to-explain words */
+.terms { margin-top: 24px; }
+.terms-q { font-weight: 700; display: block; margin-bottom: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+button.term { height: 40px; padding: 0 14px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1.5px solid var(--line); font-size: 14px; }
+button.term:hover { border-color: var(--aquifer); filter: none; }
+button.term[aria-expanded="true"] { background: var(--aquifer); color: var(--ground); border-color: var(--aquifer); }
+.def { margin: 10px 0 0; padding: 14px 16px; background: var(--surface); border: 1.5px solid var(--aquifer); border-radius: 12px; max-width: 65ch; }
+
+/* Detail: pick a year under the chart */
+.pick-years { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+button.yb { height: 40px; padding: 0 12px; background: transparent; color: var(--aquifer); border: 1.5px solid var(--line); font-size: 14px; }
+button.yb:hover { border-color: var(--aquifer); filter: none; }
+button.yb.on { background: var(--aquifer); color: var(--ground); border-color: var(--aquifer); }
+.readout { margin: 12px 0 0; font-size: 17px; max-width: 65ch; }
+.chart circle[data-py] { cursor: pointer; }
+.cmp-pick { align-items: center; margin-top: 16px; }
+.cmp-pick span { color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .glass .fill { transition: none; } }
 @media (prefers-reduced-motion: no-preference) {
   .chart polyline.series { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw 900ms ease-out forwards; }
   @keyframes draw { to { stroke-dashoffset: 0; } }
@@ -143,7 +186,20 @@ td { padding: 11px 8px 11px 0; border-bottom: 1px solid var(--rule); vertical-al
   var SHORT = { dioxane: "1,4-Dioxane", nitrate: "Nitrate", pfoa: "PFOA", pfos: "PFOS", lead: "Lead at home taps" };
   var UNIT = { dioxane: "µg/L", nitrate: "mg/L", pfoa: "ppt", pfos: "ppt", lead: "µg/L" };
   var app = document.getElementById("app");
-  var state = { view: "home", district: null, key: null, compareKey: "dioxane", msg: "", msgErr: false, concerns: { nitrate: false, pfas: true, lead: false, dioxane: false, baby: false } };
+  var UNIT_TERM = { dioxane: "ppb", nitrate: "ppm", pfoa: "ppt", pfos: "ppt", lead: "ppb" };
+  // Plain-language explanations behind the "What do these words mean?" buttons.
+  var GLOSS = {
+    highest: ["Highest result", "The worst single well or sample that year. Most homes get water blended from several wells, so most taps are lower."],
+    limit: ["Limit", "The most a water district is allowed to serve. New York State and EPA set it with a safety margin built in. Under the limit means the water meets the rule."],
+    ppb: ["ppb (µg/L)", "Parts per billion, also written µg/L. One ppb is about one drop of ink in a backyard swimming pool."],
+    ppt: ["ppt (ng/L)", "Parts per trillion, also written ng/L. One ppt is about one drop in 20 Olympic swimming pools. PFAS limits are this tiny because the chemicals build up in the body over years."],
+    ppm: ["ppm (mg/L)", "Parts per million, also written mg/L. One ppm is about one drop in a full kitchen trash can of water."],
+    nd: ["ND", "Not detected. The lab tested for it and found none, or less than it can measure."],
+    p90: ["90th percentile", "For lead, the district tests the tap in about 30 homes. Line the results up from low to high. The 90th percentile is the level that 9 out of 10 homes are at or below."],
+    action: ["Action level", "Lead's trigger point, not a limit. If more than 1 in 10 homes tested are above 15, the district must take extra steps to cut lead. It drops to 10 in 2027."]
+  };
+  var state = { view: "home", district: null, key: null, year: null, pickYear: null, cmpA: null, cmpB: null, compareKey: "dioxane", msg: "", msgErr: false, concerns: { nitrate: false, pfas: true, lead: false, dioxane: false, baby: false } };
+  var playTimer = null;
 
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function byId(id) { for (var i = 0; i < D.districts.length; i++) if (D.districts[i].id === id) return D.districts[i]; return null; }
@@ -154,22 +210,72 @@ td { padding: 11px 8px 11px 0; border-bottom: 1px solid var(--rule); vertical-al
   function save() { try { localStorage.setItem("taptrack", JSON.stringify({ d: state.district })); } catch (e) {} }
   function load() { try { var s = JSON.parse(localStorage.getItem("taptrack") || "{}"); return s.d || null; } catch (e) { return null; } }
 
+  function latestYear(d) { return years(d.reports).pop(); }
+  // The district as it looked in year y: only results and reports up to then.
+  function upTo(d, y) {
+    var o = {}, k, c, x;
+    for (k in d) o[k] = d[k];
+    o.series = {};
+    for (c in d.series) { o.series[c] = {}; for (x in d.series[c]) if (x <= y) o.series[c][x] = d.series[c][x]; }
+    o.reports = {};
+    for (x in d.reports) if (x <= y) o.reports[x] = d.reports[x];
+    return o;
+  }
+  // A value compared to its limit, in words a resident would use.
+  function share(r) {
+    if (r <= 0) return "Not found";
+    if (r < 0.1) return "A tiny amount, under a tenth of the limit";
+    if (r < 0.3) return "Less than a third of the limit";
+    if (r < 0.45) return "Under half the limit";
+    if (r < 0.6) return "About half the limit";
+    if (r < 0.85) return "About three quarters of the limit";
+    if (r <= 1) return "Close to the limit";
+    if (r < 1.5) return "Over the limit";
+    return "About " + Math.round(r) + " times the limit";
+  }
+
   // Status of the latest value against the New York limit, then the federal one.
   function status(key, d) {
     var s = d.series[key], ys = years(s), c = C[key];
-    if (!ys.length) return { tone: "quietc", say: "No results in these reports", latest: null };
-    var y = ys[ys.length - 1], v = s[y], latestReport = years(d.reports).pop();
+    if (!ys.length) return { tone: "quietc", say: "No results in these reports.", latest: null, r: 0 };
+    var y = ys[ys.length - 1], v = s[y], latestReport = latestYear(d);
     var peakY = ys[0]; ys.forEach(function (k) { if (s[k] > s[peakY]) peakY = k; });
     var peak = s[peakY];
-    if (y < latestReport && key !== "lead") return { tone: "quietc", say: "Not in the " + (+y + 1 === +latestReport ? latestReport + " table" : (+y + 1) + " to " + latestReport + " tables") + ", which usually means not detected. Last found at " + v + " in " + y, latest: { y: y, v: v, stale: true } };
-    var out = { latest: { y: y, v: v } }, wasHigh = peak > c.nyLimit && peakY !== y;
-    if (v > c.nyLimit) { out.tone = "over"; out.say = "Above New York's limit of " + c.nyLimit; }
-    else if (key === "lead") { out.tone = v > 10 ? "watch" : "good"; out.say = (v === 0 ? "Not detected at the 90th percentile" : "Under the action level of 15") + ". Last tested in " + y; }
-    else if (c.fedLimit && v > c.fedLimit && c.fedLimit < c.nyLimit) { out.tone = "watch"; out.say = "Under NY's " + c.nyLimit + ", above EPA's coming " + c.fedLimit; }
-    else if (v >= c.nyLimit / 2) { out.tone = "watch"; out.say = "Under the limit of " + c.nyLimit + ", but over half of it" + (key === "nitrate" ? ". Infant advisory" : ""); }
-    else { out.tone = "good"; out.say = "Under the limit of " + c.nyLimit + (c.fedLimit && c.fedLimit < c.nyLimit ? " and EPA's coming " + c.fedLimit : ""); }
-    if (wasHigh) out.say += ". Was " + peak + " in " + peakY;
+    if (y < latestReport && key !== "lead") return { tone: "quietc", say: "Not listed in the " + (+y + 1 === +latestReport ? latestReport + " report" : (+y + 1) + " to " + latestReport + " reports") + ", which usually means not found. Last found at " + v + " in " + y + ".", latest: { y: y, v: v, stale: true }, r: 0 };
+    var r = v / c.nyLimit, out = { latest: { y: y, v: v }, r: r }, wasHigh = peak > c.nyLimit && peakY !== y;
+    if (key === "lead") { out.tone = v > 15 ? "over" : v > 10 ? "watch" : "good"; out.say = (v === 0 ? "At least 9 in 10 homes tested had no lead found." : "9 in 10 homes tested were at or under " + v + ". The action level is 15.") + " Tested in " + y + "."; }
+    else if (v > c.nyLimit) { out.tone = "over"; out.say = share(r) + ". New York allows " + c.nyLimit + "."; }
+    else if (c.fedLimit && v > c.fedLimit && c.fedLimit < c.nyLimit) { out.tone = "watch"; out.say = "Under New York's limit of " + c.nyLimit + ", but over EPA's new limit of " + c.fedLimit + "."; }
+    else if (r >= 0.5) { out.tone = "watch"; out.say = share(r) + ". New York allows " + c.nyLimit + "." + (key === "nitrate" ? " Infant warning applies." : ""); }
+    else { out.tone = "good"; out.say = share(r) + ". New York allows " + c.nyLimit + "."; }
+    if (wasHigh) out.say += " It was " + peak + " in " + peakY + ".";
     return out;
+  }
+  function valText(st) { var lv = st.latest; return lv ? (lv.stale ? "ND" : fmt(lv.v)) : "n/a"; }
+  function fillScale(st) { return !st.latest || st.latest.stale ? 0 : Math.min(st.r, 1.3) / 1.3; }
+
+  // A glass that fills toward the dashed line (New York's limit). Above the line means over.
+  function glass(id, st, label) {
+    var shape = "M3.5 2.5h23l-3.5 39h-16z";
+    return '<svg class="glass" width="30" height="44" viewBox="0 0 30 44"' + (label ? ' role="img" aria-label="' + esc(label) + '"' : ' aria-hidden="true"') + '><clipPath id="g-' + id + '"><path d="' + shape + '"/></clipPath>' +
+      '<g clip-path="url(#g-' + id + ')"><rect class="fill ' + st.tone + '" x="0" y="3" width="30" height="39" style="transform:scaleY(' + fillScale(st).toFixed(3) + ')"/></g>' +
+      '<line class="lim" x1="0" x2="30" y1="12" y2="12"/><path class="rim" d="' + shape + '"/></svg>';
+  }
+
+  function term(k, label) { return '<button type="button" class="term" data-term="' + k + '" aria-expanded="false" aria-controls="def">' + esc(label || GLOSS[k][0]) + "</button>"; }
+  function termBar(keys) {
+    return '<div class="terms"><span class="terms-q">What do these words mean?</span><div class="chips">' + keys.map(function (k) { return term(k); }).join("") +
+      '</div><p class="def" id="def" aria-live="polite" hidden></p></div>';
+  }
+  function toggleTerm(b) {
+    var def = document.getElementById("def"), open = b.getAttribute("aria-expanded") === "true";
+    app.querySelectorAll(".term").forEach(function (t) { t.setAttribute("aria-expanded", "false"); });
+    if (!def) return;
+    if (open) { def.hidden = true; return; }
+    b.setAttribute("aria-expanded", "true");
+    var g = GLOSS[b.dataset.term];
+    def.innerHTML = "<b>" + esc(g[0]) + ".</b> " + esc(g[1]);
+    def.hidden = false;
   }
 
   function verdict(d) {
@@ -182,22 +288,15 @@ td { padding: 11px 8px 11px 0; border-bottom: 1px solid var(--rule); vertical-al
       if (peak > 1 && last <= 1) { parts.push("1,4-dioxane is back under New York's limit after new treatment."); st.dioxane = { tone: "done" }; }
       else if (last > 1) { parts.push("1,4-dioxane is above New York's limit."); st.dioxane = { tone: "done" }; }
     }
-    var watch = ORDER.filter(function (k) { return st[k].tone === "watch" || st[k].tone === "over"; }).map(function (k) { return SHORT[k].toLowerCase(); });
+    var IN_SENTENCE = { dioxane: "1,4-dioxane", nitrate: "nitrate", pfoa: "PFOA", pfos: "PFOS", lead: "lead at home taps" };
+    var watch = ORDER.filter(function (k) { return st[k].tone === "watch" || st[k].tone === "over"; }).map(function (k) { return IN_SENTENCE[k]; });
     if (watch.length) parts.push(watch.join(" and ").replace(/^./, function (c) { return c.toUpperCase(); }) + (watch.length > 1 ? " are" : " is") + " the one" + (watch.length > 1 ? "s" : "") + " to watch.");
     else parts.push(parts.length ? "Everything else is under the limits." : "Everything tracked here is under the limits.");
     return parts.join(" ");
   }
 
-  function spark(s) {
-    var ys = years(s); if (ys.length < 2) return "";
-    var vals = ys.map(function (y) { return s[y]; }), mx = Math.max.apply(null, vals) || 1;
-    var pts = vals.map(function (v, i) { return (i * 72 / (vals.length - 1)).toFixed(1) + "," + (26 - v / mx * 24).toFixed(1); }).join(" ");
-    var last = pts.split(" ").pop().split(",");
-    return '<svg width="72" height="28" viewBox="0 0 72 28" aria-hidden="true"><polyline points="' + pts + '" fill="none" stroke="var(--aquifer)" stroke-width="2" stroke-linejoin="round"/><circle cx="' + last[0] + '" cy="' + last[1] + '" r="3" fill="var(--aquifer)"/></svg>';
-  }
-
-  // Full trend chart. series: [{name, s, color}]
-  function chart(key, series, label) {
+  // Full trend chart. series: [{name, s, color}]. hi: a year to ring (single-series only).
+  function chart(key, series, label, hi) {
     var c = C[key], W = 360, H = 250, L = 38, R = 14, T = 18, B = 40;
     var all = {}; series.forEach(function (x) { years(x.s).forEach(function (y) { all[y] = 1; }); });
     var ys = Object.keys(all).sort(); if (!ys.length) return "<p>No results to chart.</p>";
@@ -219,8 +318,10 @@ td { padding: 11px 8px 11px 0; border-bottom: 1px solid var(--rule); vertical-al
       var k = years(x.s), pts = k.map(function (y) { return X(+y).toFixed(1) + "," + Y(x.s[y]).toFixed(1); });
       var len = 0; for (var i = 1; i < k.length; i++) len += Math.hypot(X(+k[i]) - X(+k[i - 1]), Y(x.s[k[i]]) - Y(x.s[k[i - 1]]));
       if (k.length > 1) g += '<polyline class="series" style="--len:' + Math.ceil(len) + '" points="' + pts.join(" ") + '" fill="none" stroke="' + x.color + '" stroke-width="3" stroke-linejoin="round"/>';
-      k.forEach(function (y, i) {
-        g += '<circle cx="' + X(+y).toFixed(1) + '" cy="' + Y(x.s[y]).toFixed(1) + '" r="4" fill="' + x.color + '"><title>' + esc(x.name + " " + y + ": " + fmt(x.s[y]) + " " + UNIT[key]) + "</title></circle>";
+      k.forEach(function (y) {
+        var one = series.length === 1;
+        if (one && y === hi) g += '<circle cx="' + X(+y).toFixed(1) + '" cy="' + Y(x.s[y]).toFixed(1) + '" r="9" fill="none" stroke="var(--ink)" stroke-width="2"/>';
+        g += '<circle cx="' + X(+y).toFixed(1) + '" cy="' + Y(x.s[y]).toFixed(1) + '" r="' + (one ? 6 : 4) + '" fill="' + x.color + '"' + (one ? ' data-py="' + y + '"' : "") + "><title>" + esc(x.name + " " + y + ": " + fmt(x.s[y]) + " " + UNIT[key]) + "</title></circle>";
       });
       if (series.length === 1) {
         var pk = k[0]; k.forEach(function (y) { if (x.s[y] > x.s[pk]) pk = y; }); var ls = k[k.length - 1];
@@ -261,28 +362,78 @@ td { padding: 11px 8px 11px 0; border-bottom: 1px solid var(--rule); vertical-al
   function home() {
     var d = byId(state.district);
     if (!d) {
-      return header() + '<div class="wrap"><h2 style="font-size:24px;margin-top:8px">See what is in your tap water, and how it has changed.</h2><p class="basis" style="margin-top:10px">Every Long Island water district publishes a yearly report as a PDF. TapTrack reads them and puts the years side by side, with the limits and what the district is doing about it.</p>' +
-        '<div class="actions"><button type="button" data-go="jericho">See Jericho Water District</button><button type="button" class="quiet" data-go="plainview">See Plainview Water District</button></div>' + foot(null) + "</div>";
+      return header() + '<div class="wrap"><h2 style="font-size:24px;margin-top:8px">See what is in your tap water, and how it has changed.</h2><p class="basis" style="margin-top:10px">Every water district puts out a yearly report as a PDF. TapTrack reads them for you and lines the years up side by side, in plain words, with a link to every report.</p>' +
+        '<div class="actions">' + D.districts.map(function (x, i) { return '<button type="button"' + (i ? ' class="quiet"' : "") + ' data-go="' + x.id + '">See ' + esc(x.name) + "</button>"; }).join("") + "</div>" + foot(null) + "</div>";
     }
+    var dv = upTo(d, state.year);
     var rows = ORDER.map(function (k) {
-      var st = status(k, d), lv = st.latest;
-      return '<li><button type="button" data-key="' + k + '" aria-label="' + esc(SHORT[k] + ". " + st.say + ". Open trend") + '"><span><span class="name">' + SHORT[k] + '</span><span class="say ' + st.tone + '">' + esc(st.say) + "</span></span>" +
-        "<span>" + spark(d.series[k]) + '</span><span class="val num"><strong>' + (lv ? (lv.stale ? "ND" : fmt(lv.v)) : "n/a") + "</strong><em>" + UNIT[k] + "</em></span></button></li>";
+      var st = status(k, dv);
+      return '<li data-row="' + k + '"><button type="button" data-key="' + k + '" aria-label="' + esc(rowLabel(k, st)) + '"><span><span class="name">' + SHORT[k] + '</span><span class="say ' + st.tone + '">' + esc(st.say) + "</span></span>" +
+        glass(k, st) + '<span class="val num"><strong>' + valText(st) + "</strong><em>" + UNIT[k] + "</em></span></button></li>";
     }).join("");
-    var latest = years(d.reports).pop();
     return header() +
       '<div class="band"><div class="wrap"><small>Your water comes from</small><h1>' + esc(d.name) + '</h1><small class="num">' + d.population.toLocaleString() + " people. District ID " + d.pwsid + "</small>" + strata(d) + "</div></div>" +
-      '<div class="wrap"><p class="verdict">' + esc(verdict(d)) + '</p><p class="basis">' + latest + " results, the highest the district reported at any well. Tap a row for the full history.</p>" +
+      '<div class="wrap">' + yearCtl(d) + '<p class="verdict" id="verdict" aria-live="polite">' + esc(verdict(dv)) + '</p><p class="basis" id="basis">' + basis(d) + "</p>" +
       '<ul class="log">' + rows + "</ul>" +
+      '<p class="glass-key">' + glass("key", { tone: "good", latest: { v: 1 }, r: 0.5 }) + "<span>Each glass fills up toward the dashed line, which is New York's limit. Tap a row to see every year.</span></p>" +
+      termBar(["highest", "limit", "nd", "ppb", "ppt", "ppm", "p90"]) +
       '<div class="actions"><button type="button" data-view="filter">Do I need a filter?</button><button type="button" class="quiet" data-view="compare">Compare with another district</button></div>' +
       foot(d) + "</div>";
+  }
+  function rowLabel(k, st) { return SHORT[k] + ": " + valText(st) + " " + UNIT[k] + ". " + st.say + " Open every year."; }
+  function basis(d) {
+    var y = state.year;
+    return d.reports[y] ? "The highest result the district found in " + y + ", usually at its worst well." : "The district has not posted a " + y + " report, so these are the latest results before " + y + ".";
+  }
+  function yearCtl(d) {
+    var ys = years(d.reports), lo = +ys[0], hi = +ys[ys.length - 1], ticks = "";
+    for (var y = lo; y <= hi; y++) ticks += "<span>" + ("'" + String(y).slice(2)) + "</span>";
+    return '<div class="yearctl"><div class="yc-top"><label for="yr">Year</label><output id="yr-out" class="num" for="yr">' + state.year + "</output>" +
+      '<button type="button" class="quiet small" data-play aria-pressed="false">Play the years</button></div>' +
+      '<input type="range" id="yr" min="' + lo + '" max="' + hi + '" step="1" value="' + state.year + '" aria-valuetext="' + state.year + '">' +
+      '<div class="yc-ticks" aria-hidden="true">' + ticks + "</div></div>";
+  }
+  // Move the whole district page to year y without rebuilding it, so the glasses animate.
+  function setYear(y) {
+    var d = byId(state.district); if (!d) return;
+    state.year = String(y);
+    var dv = upTo(d, state.year), el;
+    if ((el = document.getElementById("yr-out"))) el.textContent = state.year;
+    if ((el = document.getElementById("yr"))) { el.value = state.year; el.setAttribute("aria-valuetext", state.year); }
+    if ((el = document.getElementById("verdict"))) el.textContent = verdict(dv);
+    if ((el = document.getElementById("basis"))) el.textContent = basis(d);
+    if ((el = document.getElementById("src"))) { var sy = d.reports[state.year] ? state.year : latestYear(dv) || latestYear(d); el.href = d.reports[sy]; el.textContent = d.name + " " + sy + " report"; }
+    ORDER.forEach(function (k) {
+      var li = app.querySelector('[data-row="' + k + '"]'); if (!li) return;
+      var st = status(k, dv), say = li.querySelector(".say"), f = li.querySelector(".fill");
+      say.className = "say " + st.tone; say.textContent = st.say;
+      li.querySelector("strong").textContent = valText(st);
+      li.querySelector("button").setAttribute("aria-label", rowLabel(k, st));
+      f.setAttribute("class", "fill " + st.tone); f.style.transform = "scaleY(" + fillScale(st).toFixed(3) + ")";
+    });
+  }
+  function stopPlay() {
+    if (playTimer) clearInterval(playTimer);
+    playTimer = null;
+    var b = app.querySelector("[data-play]"); if (b) { b.setAttribute("aria-pressed", "false"); b.textContent = "Play the years"; }
+  }
+  function togglePlay(b) {
+    if (playTimer) { stopPlay(); return; }
+    var r = document.getElementById("yr"); if (!r) return;
+    if (+r.value >= +r.max) setYear(r.min);
+    b.setAttribute("aria-pressed", "true"); b.textContent = "Pause";
+    playTimer = setInterval(function () {
+      var cur = document.getElementById("yr");
+      if (!cur || +cur.value >= +cur.max) { stopPlay(); return; }
+      setYear(+cur.value + 1);
+    }, 1200);
   }
 
   function foot(d) {
     var h = '<div class="foot">';
     if (d) {
-      var ly = years(d.reports).pop();
-      h += '<div>Source: <a href="' + d.reports[ly] + '" target="_blank" rel="noopener">' + esc(d.name) + " " + ly + ' report</a>. <button type="button" class="back" style="padding:0" data-view="notes">Report errors we found (' + d.notes.length + ")</button></div>";
+      var ly = state.view === "home" && d.reports[state.year] ? state.year : latestYear(d);
+      h += '<div>Source: <a id="src" href="' + d.reports[ly] + '" target="_blank" rel="noopener">' + esc(d.name) + " " + ly + ' report</a>. <button type="button" class="back" style="padding:0" data-view="notes">Report errors we found (' + d.notes.length + ")</button></div>";
     }
     h += "<div>" + esc(D.meta.valueRule) + " Not medical advice.</div>";
     h += '<div>District boundaries: <a href="https://www.epa.gov/ground-water-and-drinking-water/community-water-system-service-area-boundaries" target="_blank" rel="noopener">EPA service area map</a>. Limits: New York State Department of Health and EPA.</div></div>';
@@ -292,17 +443,28 @@ td { padding: 11px 8px 11px 0; border-bottom: 1px solid var(--rule); vertical-al
   function detail() {
     var d = byId(state.district), k = state.key, c = C[k], s = d.series[k], st = status(k, d);
     var ys = years(s);
-    var lede = st.say + ".";
+    var py = state.pickYear && s[state.pickYear] !== undefined ? state.pickYear : ys[ys.length - 1];
     var label = "Highest " + c.name + " result by year in " + d.name + ": " + ys.map(function (y) { return y + " " + fmt(s[y]); }).join(", ") + ". New York limit " + c.nyLimit + ".";
     var tl = (k === "dioxane" || k === "pfoa" || k === "pfos") ? d.timeline : [];
     return '<div class="wrap detail" style="padding-block:8px 0"><button type="button" class="back" data-view="home">Back to ' + esc(d.name) + "</button>" +
-      "<h1>" + esc(c.name) + '</h1><p class="lede ' + st.tone + '">' + esc(lede) + "</p>" +
-      '<div class="chart">' + chart(k, [{ name: d.name, s: s, color: "var(--aquifer)" }], label) + "</div>" +
+      "<h1>" + esc(c.name) + '</h1><p class="lede ' + st.tone + '">' + esc(st.say) + "</p>" +
+      '<div class="chart">' + chart(k, [{ name: d.name, s: s, color: "var(--aquifer)" }], label, py) + "</div>" +
       '<div class="legend"><span><i class="series"></i>' + esc(d.name) + '</span><span><i></i>New York limit ' + c.nyLimit + "</span>" + (c.fedLimit && c.fedLimit !== c.nyLimit ? '<span><i class="fed"></i>' + (k === "lead" ? "EPA level from 2027: " : "EPA limit: ") + c.fedLimit + "</span>" : "") + "</div>" +
+      (ys.length ? '<div class="pick-years" role="group" aria-label="Pick a year">' + ys.map(function (y) { return '<button type="button" class="yb' + (y === py ? " on" : "") + '" data-py="' + y + '" aria-pressed="' + (y === py) + '">' + y + "</button>"; }).join("") + "</div>" + readout(d, k, py) : "") +
+      termBar([UNIT_TERM[k], "nd"].concat(k === "lead" ? ["p90", "action"] : ["limit", "highest"])) +
       (tl.length ? '<section><h2>What the district did</h2><ol class="steps">' + tl.map(function (t) { return "<li><b>" + esc(t.date) + "</b><span>" + esc(t.text) + "</span></li>"; }).join("") + "</ol></section>" : "") +
-      "<section><h2>What it is</h2><p>" + esc(c.what) + "</p><h2>Why it matters</h2><p>" + esc(c.why) + "</p><h2>How it gets fixed</h2><p>" + esc(c.fix) + "</p><h2>The limits</h2><p>" + esc(c.fedNote) + "</p></section>" +
+      "<section><h2>What is it?</h2><p>" + esc(c.what) + "</p><h2>Should I worry?</h2><p>" + esc(c.why) + "</p><h2>How does it get fixed?</h2><p>" + esc(c.fix) + "</p><h2>Can a home filter help?</h2><p>" + esc(c.filter) + "</p><h2>What are the limits?</h2><p>" + esc(c.fedNote) + "</p></section>" +
       '<section><h2>Every year, from the source</h2><div class="years">' + years(d.reports).map(function (y) { return '<a href="' + d.reports[y] + '" target="_blank" rel="noopener">' + y + (s[y] !== undefined ? ": " + fmt(s[y]) : ": not listed") + "</a>"; }).join("") + "</div></section>" +
       foot(d) + "</div>";
+  }
+
+  // One year's value in words, with the report it came from.
+  function readout(d, k, y) {
+    var v = d.series[k][y], c = C[k];
+    var rep = d.reports[y] ? y : years(d.reports).filter(function (x) { return x > y; })[0];
+    var words = k === "lead" ? (v === 0 ? "At least 9 in 10 homes tested had no lead found" : "9 in 10 homes tested were at or under " + v + ". The action level is 15") : share(v / c.nyLimit);
+    return '<p class="readout" aria-live="polite"><b>' + y + ":</b> " + fmt(v) + " " + UNIT[k] + ". " + esc(words) + "." +
+      (rep ? ' <a href="' + d.reports[rep] + '" target="_blank" rel="noopener">See it in the ' + rep + " report</a>" : "") + "</p>";
   }
 
   function filterRec(cn) {
@@ -337,11 +499,15 @@ td { padding: 11px 8px 11px 0; border-bottom: 1px solid var(--rule); vertical-al
   }
 
   function compare() {
-    var a = D.districts[0], b = D.districts[1], k = state.compareKey, c = C[k];
+    var a = byId(state.cmpA) || byId(state.district) || D.districts[0];
+    var b = byId(state.cmpB); if (!b || b === a) b = D.districts.filter(function (x) { return x !== a; })[0];
+    var k = state.compareKey, c = C[k];
+    function pick(which, sel) { return '<select data-cmp="' + which + '" aria-label="' + (which === "A" ? "First" : "Second") + ' district">' + D.districts.map(function (x) { return '<option value="' + x.id + '"' + (x === sel ? " selected" : "") + ">" + esc(x.name) + "</option>"; }).join("") + "</select>"; }
     var tabs = ORDER.filter(function (x) { return x !== "lead"; }).map(function (x) { return '<button type="button" class="' + (x === k ? "" : "quiet") + '" data-ck="' + x + '" aria-pressed="' + (x === k) + '">' + SHORT[x] + "</button>"; }).join("");
     var label = c.name + " by year. " + a.name + ": " + years(a.series[k]).map(function (y) { return y + " " + fmt(a.series[k][y]); }).join(", ") + ". " + b.name + ": " + years(b.series[k]).map(function (y) { return y + " " + fmt(b.series[k][y]); }).join(", ") + ".";
     return '<div class="wrap detail" style="padding-block:8px 0"><button type="button" class="back" data-view="home">Back</button><h1>Compare districts</h1>' +
-      '<p class="lede">Two neighbors, same aquifer, different paths.</p><div class="actions" role="group" aria-label="Contaminant">' + tabs + "</div>" +
+      '<p class="lede">Two neighbors, same aquifer, different paths. Pick any two.</p><div class="row cmp-pick">' + pick("A", a) + "<span>and</span>" + pick("B", b) + "</div>" +
+      '<div class="actions" role="group" aria-label="Contaminant">' + tabs + "</div>" +
       '<div class="chart">' + chart(k, [{ name: a.name, s: a.series[k], color: "var(--aquifer)" }, { name: b.name, s: b.series[k], color: "var(--watch)" }], label) + "</div>" +
       '<div class="legend"><span><i class="series"></i>' + esc(a.name) + '</span><span><i class="series2"></i>' + esc(b.name) + '</span><span><i></i>New York limit ' + c.nyLimit + "</span></div>" +
       '<section><h2>Latest results</h2><div class="tablebox"><table><thead><tr><th>Contaminant</th><th>' + esc(a.name) + "</th><th>" + esc(b.name) + "</th></tr></thead><tbody>" +
@@ -363,7 +529,7 @@ td { padding: 11px 8px 11px 0; border-bottom: 1px solid var(--rule); vertical-al
     if (v !== "home" && v !== "compare" && !byId(state.district)) v = "home";
     app.innerHTML = v === "detail" ? detail() : v === "filter" ? filter() : v === "compare" ? compare() : v === "notes" ? notes() : home();
   }
-  function go(view, extra) { state.view = view; for (var k in extra || {}) state[k] = extra[k]; render(); window.scrollTo(0, 0); }
+  function go(view, extra) { stopPlay(); state.view = view; for (var k in extra || {}) state[k] = extra[k]; render(); window.scrollTo(0, 0); }
   function setMsg(m, err) { state.msg = m; state.msgErr = !!err; var el = document.getElementById("msg"); if (el) { el.textContent = m; el.className = "msg" + (err ? " err" : ""); } }
   function choose(val) {
     if (!val) return;
@@ -373,7 +539,8 @@ td { padding: 11px 8px 11px 0; border-bottom: 1px solid var(--rule); vertical-al
       go("home", { msg: o ? o.name + " is not added yet. Its full history is coming next. Try Jericho or Plainview to see how TapTrack works." : "", msgErr: false });
       return;
     }
-    state.district = val; save(); go("home", { msg: "", msgErr: false });
+    var d = byId(val); if (!d) return;
+    state.district = val; save(); go("home", { msg: "", msgErr: false, year: latestYear(d), cmpA: null, cmpB: null });
   }
 
   // Address to district: geocode with OpenStreetMap, then ask EPA's boundary map which system covers that point.
@@ -391,7 +558,7 @@ td { padding: 11px 8px 11px 0; border-bottom: 1px solid var(--rule); vertical-al
         var f = (res.features || []).map(function (x) { return x.attributes; });
         if (!f.length) { setMsg("That address is outside the water districts TapTrack knows. Pick your district from the list.", true); return; }
         var hit = null; f.forEach(function (a) { if (!hit && byPws(a.PWSID)) hit = byPws(a.PWSID); });
-        if (hit) { state.district = hit.id; save(); go("home", { msg: "Found: " + hit.name + ".", msgErr: false }); return; }
+        if (hit) { state.district = hit.id; save(); go("home", { msg: "Found: " + hit.name + ".", msgErr: false, year: latestYear(hit) }); return; }
         setMsg("Your water comes from " + f[0].PWS_Name + " (" + f[0].PWSID + "). Its full history is coming next. Pick Jericho or Plainview to see how TapTrack works.", false);
       })
       .catch(function (e) {
@@ -400,21 +567,28 @@ td { padding: 11px 8px 11px 0; border-bottom: 1px solid var(--rule); vertical-al
   }
 
   app.addEventListener("submit", function (e) { if (e.target.id === "find") { e.preventDefault(); var q = document.getElementById("addr").value.trim(); if (q) findAddress(q); else setMsg("Type an address first, or pick your district.", true); } });
+  app.addEventListener("input", function (e) { if (e.target.id === "yr") { stopPlay(); setYear(e.target.value); } });
   app.addEventListener("change", function (e) {
     var t = e.target;
     if (t.id === "pick") choose(t.value);
+    if (t.dataset && t.dataset.cmp) { state["cmp" + t.dataset.cmp] = t.value; if (t.dataset.cmp === "A" && state.cmpB === t.value) state.cmpB = null; render(); var s = app.querySelector('[data-cmp="' + t.dataset.cmp + '"]'); if (s) s.focus(); }
     if (t.dataset && t.dataset.concern) { state.concerns[t.dataset.concern] = t.checked; render(); var el = app.querySelector('[data-concern="' + t.dataset.concern + '"]'); if (el) el.focus(); }
   });
   app.addEventListener("click", function (e) {
+    var p = e.target.closest("[data-py]");
+    if (p && app.contains(p)) { state.pickYear = p.dataset.py; render(); var f = app.querySelector('button[data-py="' + p.dataset.py + '"]'); if (f) f.focus(); return; }
     var b = e.target.closest("button"); if (!b || !app.contains(b)) return;
     if (b.dataset.go) choose(b.dataset.go);
-    else if (b.dataset.key) go("detail", { key: b.dataset.key });
+    else if (b.dataset.term) toggleTerm(b);
+    else if (b.hasAttribute("data-play")) togglePlay(b);
+    else if (b.dataset.key) go("detail", { key: b.dataset.key, pickYear: null });
     else if (b.dataset.view) go(b.dataset.view);
     else if (b.dataset.ck) { state.compareKey = b.dataset.ck; render(); var f = app.querySelector('[data-ck="' + b.dataset.ck + '"]'); if (f) f.focus(); }
   });
 
   var h = (location.hash || "").slice(1);
   state.district = byId(h) ? h : load();
+  if (byId(state.district)) state.year = latestYear(byId(state.district));
   render();
 })();
 </script>

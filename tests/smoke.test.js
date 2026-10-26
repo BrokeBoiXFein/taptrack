@@ -1,6 +1,4 @@
-// Renders every view for every district in jsdom. Fails on any script error,
-// or on "undefined", "NaN" or "[object Object]" anywhere in the page text.
-// Run: npm test (builds docs/index.html first).
+// Renders every page for every district and fails on script errors or broken text. Run: npm test
 const test = require("node:test");
 const assert = require("node:assert");
 const fs = require("node:fs");

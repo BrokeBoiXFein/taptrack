@@ -1,16 +1,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TapTrack</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Calibri on Windows; Carlito (same letter widths as Calibri) everywhere else -->
+<!-- Carlito stands in for Calibri on Macs and phones -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
-<!-- Leaflet draws the district map. If it fails to load, the app still works without the map. -->
+<!-- Leaflet: district map -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
-/* Layout: one narrow reading column on white; dark navy bands for the district name and the aquifer section */
 :root {
   color-scheme: light;
   --ground: #FFFFFF;
@@ -38,7 +36,7 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.5; }
-/* Arial for small text: labels, captions, status lines, chips, footnotes */
+/* Small text in Arial */
 .brand span, .find label, .msg, .band small, .basis, .log .say, .log .val em, .legend, .yc-ticks, .yc-top label, .glass-key, .terms-q,
 button.term, button.chip, button.yb, .def, .foot, table, .map-legend, .ranking .say, .pick small, .other, .layers dd, .strata + .row,
 .addr-list small, .leaflet-tooltip, .log .tip, .back { font-family: var(--small); }
@@ -139,7 +137,7 @@ button:hover { filter: brightness(1.08); }
 button:active { transform: translateY(1px); }
 button.quiet:hover { border-color: var(--aquifer); filter: none; }
 
-/* Year slider: one control drives every number on the district page */
+/* Year slider */
 .yearctl { margin: 22px 0 4px; padding: 14px 16px 8px; background: var(--surface); border: 1.5px solid var(--rule); border-radius: 12px; }
 .yc-top { display: flex; align-items: center; gap: 12px; }
 .yc-top label { font-weight: 700; }
@@ -148,7 +146,7 @@ button.small { height: 40px; padding: 0 16px; font-size: 15px; }
 .yearctl input[type="range"] { width: 100%; height: 40px; margin: 8px 0 0; accent-color: var(--aquifer); cursor: pointer; }
 .yc-ticks { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); padding: 0 2px; }
 
-/* The glass: fills toward New York's limit (the dashed line) */
+/* Glass meter */
 .glass { display: block; justify-self: center; overflow: visible; }
 .glass .fill { fill: var(--aquifer); transform-box: fill-box; transform-origin: 50% 100%; transition: transform 300ms cubic-bezier(0.25, 1, 0.5, 1); }
 .glass .fill.watch { fill: var(--watch); }
@@ -158,7 +156,7 @@ button.small { height: 40px; padding: 0 16px; font-size: 15px; }
 .glass-key { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); margin: 14px 0 0; }
 .glass-key .glass { justify-self: auto; }
 
-/* Tap-to-explain words */
+/* Word explanations */
 .terms { margin-top: 24px; }
 .terms-q { font-weight: 700; display: block; margin-bottom: 8px; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -167,7 +165,7 @@ button.term:hover { border-color: var(--aquifer); filter: none; }
 button.term[aria-expanded="true"] { background: var(--aquifer); color: var(--ground); border-color: var(--aquifer); }
 .def { margin: 10px 0 0; padding: 14px 16px; background: var(--surface); border: 1.5px solid var(--aquifer); border-radius: 12px; max-width: 65ch; }
 
-/* Detail: pick a year under the chart */
+/* Year buttons */
 .pick-years { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 button.yb { height: 40px; padding: 0 12px; background: transparent; color: var(--aquifer); border: 1.5px solid var(--line); font-size: 14px; }
 button.yb:hover { border-color: var(--aquifer); filter: none; }
@@ -176,7 +174,7 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
 .chart circle[data-py] { cursor: pointer; }
 .cmp-pick { align-items: center; margin-top: 16px; }
 .cmp-pick span { color: var(--muted); }
-/* Address box with a dropdown of matching addresses */
+/* Address dropdown */
 .combo { position: relative; flex: 1 1 220px; min-width: 0; display: flex; }
 .combo input[type="text"] { flex: 1 1 auto; width: 100%; }
 .addr-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 1100; margin: 0; padding: 4px; list-style: none; background: var(--surface); border: 1.5px solid var(--line); border-radius: 10px; box-shadow: 0 8px 24px rgb(0 0 0 / 0.18); max-height: 320px; overflow-y: auto; }
@@ -185,7 +183,7 @@ button.yb.on { background: var(--aquifer); color: var(--ground); border-color: v
 .addr-list li small { color: var(--muted); font-size: 14px; }
 .addr-list li:hover, .addr-list li[aria-selected="true"] { background: color-mix(in oklab, var(--aquifer) 18%, var(--surface)); }
 
-/* Ranking: chips pick what to rank by; the map and list follow the year slider */
+/* Ranking */
 button.chip { height: 40px; padding: 0 14px; border-radius: 999px; background: var(--surface); color: var(--ink); border: 1.5px solid var(--line); font-size: 14px; }
 button.chip:hover { border-color: var(--aquifer); filter: none; }
 button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--ground); border-color: var(--aquifer); }
@@ -202,7 +200,7 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
 .ranking [aria-current="true"] .rk-name::after { content: " (this page)"; font-weight: 400; color: var(--muted); }
 .ranking .say { font-size: 14px; }
 
-/* Hover a contaminant: what it is linked to */
+/* Hover tooltip */
 .log li { position: relative; }
 .log .tip { position: absolute; left: 0; bottom: calc(100% - 10px); z-index: 20; max-width: 360px; padding: 10px 12px; border-radius: 8px; background: var(--ink); color: var(--ground); font-size: 14px; line-height: 1.4; opacity: 0; visibility: hidden; transform: translateY(4px); transition: opacity 150ms ease-out, transform 150ms ease-out, visibility 150ms; pointer-events: none; }
 .log li:hover .tip, .log li:focus-within .tip { opacity: 1; visibility: visible; transform: none; }
@@ -213,12 +211,12 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
 .map-note { margin-top: 8px; }
 .leaflet-container { font-family: var(--body); }
 .leaflet-tooltip { font-family: var(--body); font-size: 14px; }
-/* "New report should be out" note */
+/* New report note */
 .due { margin: 18px 0 0; padding: 12px 14px; border: 1.5px solid var(--watch); border-radius: 10px; background: color-mix(in oklab, var(--watch) 7%, var(--ground)); font-family: var(--small); font-size: 14px; }
 .due b { font-family: var(--body); font-size: 16px; display: block; }
 .print-only { display: none; }
 
-/* Print: a one-page summary to bring to a district meeting */
+/* Print */
 @media print {
   @page { margin: 14mm; }
   body { font-size: 11pt; color: #000; background: #fff; }
@@ -257,7 +255,6 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
   var UNIT = { dioxane: "µg/L", nitrate: "mg/L", pfoa: "ppt", pfos: "ppt", lead: "µg/L" };
   var app = document.getElementById("app");
   var UNIT_TERM = { dioxane: "ppb", nitrate: "ppm", pfoa: "ppt", pfos: "ppt", lead: "ppb" };
-  // Plain-language explanations behind the "What do these words mean?" buttons.
   var GLOSS = {
     highest: ["Highest result", "The worst single well or sample that year. Most homes get water blended from several wells, so most taps are lower."],
     limit: ["Limit", "The most a water district is allowed to serve. New York State and EPA set it with a safety margin built in. Under the limit means the water meets the rule."],
@@ -281,7 +278,7 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
   function load() { try { var s = JSON.parse(localStorage.getItem("taptrack") || "{}"); return s.d || null; } catch (e) { return null; } }
 
   function latestYear(d) { return years(d.reports).pop(); }
-  // The district as it looked in year y: only results and reports up to then.
+  // Copy of a district with only the data up to year y
   function upTo(d, y) {
     var o = {}, k, c, x;
     for (k in d) o[k] = d[k];
@@ -292,14 +289,14 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
     return o;
   }
 
-  // Status of the latest value against the New York limit, then the federal one.
+  // Compare the latest value to the NY limit, then the EPA limit
   function status(key, d) {
     var s = d.series[key], ys = years(s), c = C[key];
     if (!ys.length) return { tone: "quietc", say: "No data", latest: null, r: 0 };
     var y = ys[ys.length - 1], v = s[y], latestReport = latestYear(d);
     var peakY = ys[0]; ys.forEach(function (k) { if (s[k] > s[peakY]) peakY = k; });
     var peak = s[peakY];
-    // Missing from the newest tables usually means not detected.
+    // Missing from newer reports usually means not detected
     if (y < latestReport && key !== "lead") return { tone: "quietc", say: "Not listed since " + y + " · last " + v, latest: { y: y, v: v, stale: true }, r: 0 };
     var r = v / c.nyLimit, out = { latest: { y: y, v: v }, r: r }, wasHigh = peak > c.nyLimit && peakY !== y;
     if (key === "lead") { out.tone = v > 15 ? "over" : v > 10 ? "watch" : "good"; out.say = TAG[out.tone] + " · 90th pct " + fmt(v) + " · AL 15 · tested " + y; }
@@ -315,15 +312,15 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
   function valText(st) { var lv = st.latest; return lv ? (lv.stale ? "ND" : fmt(lv.v)) : "n/a"; }
   function fillScale(st) { return !st.latest || st.latest.stale ? 0 : Math.min(st.r, 1.3) / 1.3; }
 
-  // A glass that fills toward the dashed line (New York's limit). Above the line means over.
-  function glass(id, st, label) {
+  // Dashed line is the NY limit
+  function glass(id, st) {
     var shape = "M3.5 2.5h23l-3.5 39h-16z";
-    return '<svg class="glass" width="30" height="44" viewBox="0 0 30 44"' + (label ? ' role="img" aria-label="' + esc(label) + '"' : ' aria-hidden="true"') + '><clipPath id="g-' + id + '"><path d="' + shape + '"/></clipPath>' +
+    return '<svg class="glass" width="30" height="44" viewBox="0 0 30 44"' + ' aria-hidden="true"' + '><clipPath id="g-' + id + '"><path d="' + shape + '"/></clipPath>' +
       '<g clip-path="url(#g-' + id + ')"><rect class="fill ' + st.tone + '" x="0" y="3" width="30" height="39" style="transform:scaleY(' + fillScale(st).toFixed(3) + ')"/></g>' +
       '<line class="lim" x1="0" x2="30" y1="12" y2="12"/><path class="rim" d="' + shape + '"/></svg>';
   }
 
-  function term(k, label) { return '<button type="button" class="term" data-term="' + k + '" aria-expanded="false" aria-controls="def">' + esc(label || GLOSS[k][0]) + "</button>"; }
+  function term(k) { return '<button type="button" class="term" data-term="' + k + '" aria-expanded="false" aria-controls="def">' + esc(GLOSS[k][0]) + "</button>"; }
   function termBar(keys) {
     return '<div class="terms"><span class="terms-q">What do these words mean?</span><div class="chips">' + keys.map(function (k) { return term(k); }).join("") +
       '</div><p class="def" id="def" aria-live="polite" hidden></p></div>';
@@ -339,7 +336,6 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
     def.hidden = false;
   }
 
-  // Short status summary, e.g. "Over limit: 1,4-Dioxane. Watch: Nitrate. OK: PFOA, PFOS, Lead."
   function verdict(d) {
     var groups = { over: [], watch: [], good: [], quietc: [] }, NAME = { dioxane: "1,4-Dioxane", nitrate: "Nitrate", pfoa: "PFOA", pfos: "PFOS", lead: "Lead" };
     ORDER.forEach(function (k) { groups[status(k, d).tone].push(NAME[k]); });
@@ -351,7 +347,7 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
     return out.join(" ");
   }
 
-  // Full trend chart. series: [{name, s, color}]. hi: a year to ring (single-series only).
+  // series: [{name, s, color}], hi: year to circle
   function chart(key, series, label, hi) {
     var c = C[key], W = 360, H = 250, L = 38, R = 14, T = 18, B = 40;
     var all = {}; series.forEach(function (x) { years(x.s).forEach(function (y) { all[y] = 1; }); });
@@ -429,7 +425,6 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
       return '<li data-row="' + k + '"><button type="button" data-key="' + k + '" aria-describedby="tip-' + k + '" aria-label="' + esc(rowLabel(k, st)) + '"><span><span class="name">' + SHORT[k] + '</span><span class="say ' + st.tone + '">' + esc(st.say) + "</span></span>" +
         glass(k, st) + '<span class="val num"><strong>' + valText(st) + "</strong><em>" + UNIT[k] + '</em></span></button><span class="tip" role="tooltip" id="tip-' + k + '">' + esc(C[k].linked) + "</span></li>";
     }).join("");
-    // Page order: district name, map, year slider, the data, then the aquifer breakdown.
     return header() +
       '<div class="band"><div class="wrap" style="padding-bottom:22px"><small>Your water comes from</small><h1>' + esc(d.name) + '</h1><small class="num">' + d.population.toLocaleString() + " people. District ID " + d.pwsid + "</small></div></div>" +
       '<div class="wrap">' + dueBanner(d, new Date()) + mapHTML("Where " + d.name + " is") + yearCtl(d) +
@@ -448,14 +443,14 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
       strata(d) + "</div></section>" +
       '<div class="wrap">' + foot(d) + "</div>";
   }
-  // Reports for year Y come out by June 1 of Y+1. So after June 1, last year's report should be posted.
+  // A year's report is due by June 1 of the next year
   function expectedYear(now) { return String(now.getMonth() >= 5 ? now.getFullYear() - 1 : now.getFullYear() - 2); }
   function dueBanner(d, now) {
     var exp = expectedYear(now), last = latestYear(d);
     if (last >= exp) return "";
     return '<div class="due" role="note"><b>The ' + exp + " report should be out.</b>Districts post each year's report by June 1 of the next year. TapTrack has reports up to " + last + '. <a href="' + d.reportsPage + '" target="_blank" rel="noopener">Check the district\'s reports page</a>.</div>';
   }
-  // Only on paper: what to ask the district about, and how to reach it.
+  // Shown only when printing
   function printExtras(d) {
     return '<section class="print-only"><h2>Questions to ask the district</h2><ul class="notes">' + d.notes.map(function (n) { return "<li>" + esc(n) + "</li>"; }).join("") + "</ul>" +
       "<p>" + (d.phone ? "Phone " + esc(d.phone) + ". " : "") + 'Reports: <a href="' + d.reportsPage + '">' + esc(d.reportsPage) + "</a></p>" +
@@ -474,7 +469,7 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
       '<input type="range" id="yr" min="' + lo + '" max="' + hi + '" step="1" value="' + state.year + '" aria-valuetext="' + state.year + '">' +
       '<div class="yc-ticks" aria-hidden="true">' + ticks + "</div></div>";
   }
-  // Move the whole district page to year y without rebuilding it, so the glasses animate.
+  // Updates the page in place so the glasses animate
   function setYear(y) {
     var d = byId(state.district); if (!d) return;
     state.year = String(y);
@@ -541,7 +536,6 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
       foot(d) + "</div>";
   }
 
-  // One year's value in words, with the report it came from.
   function readout(d, k, y) {
     var v = d.series[k][y], c = C[k];
     var rep = d.reports[y] ? y : years(d.reports).filter(function (x) { return x > y; })[0];
@@ -610,13 +604,13 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
   function render() {
     var v = state.view;
     if (v !== "home" && v !== "compare" && !byId(state.district)) v = "home";
-    if (mapObj) { mapObj.remove(); mapObj = null; geoLayer = null; } // before its container is replaced
+    if (mapObj) { mapObj.remove(); mapObj = null; geoLayer = null; }
     app.innerHTML = v === "detail" ? detail() : v === "filter" ? filter() : v === "compare" ? compare() : v === "notes" ? notes() : home();
     initMap();
   }
   function go(view, extra) { stopPlay(); state.view = view; for (var k in extra || {}) state[k] = extra[k]; render(); syncHash(true); window.scrollTo(0, 0); }
 
-  // ---- Shareable links: #jericho, #jericho-dioxane, #jericho-filter, #jericho-notes, #compare ----
+  // Links: #jericho, #jericho-dioxane, #jericho-filter, #jericho-notes, #compare
   var PAGES = ["filter", "compare", "notes"], lastHash = null;
   function hashFor() {
     var d = byId(state.district);
@@ -631,7 +625,6 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
     if (h === (location.hash || "").slice(1)) return;
     try { history[push ? "pushState" : "replaceState"](null, "", h ? "#" + h : location.pathname + location.search); } catch (e) {}
   }
-  // Open whatever the link points to. Runs on load, on Back/Forward, and when someone edits the link.
   function applyHash() {
     var h = decodeURIComponent((location.hash || "").slice(1));
     if (h === lastHash) return;
@@ -668,8 +661,7 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
     state.district = val; save(); go("home", { msg: "", msgErr: false, year: latestYear(d), cmpA: null, cmpB: null, pin: null });
   }
 
-  // ---- Which district is an address in? ----
-  // District outlines come from EPA's service area map (data/boundaries.geojson), so the lookup runs in the browser.
+  // Point-in-polygon test against the EPA district outlines
   function inRing(x, y, ring) {
     var inside = false;
     for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
@@ -689,14 +681,14 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
     }
     return null;
   }
-  window.TapTrack = { districtAt: districtAt }; // used by tests
+  window.TapTrack = { districtAt: districtAt }; // for tests
 
   function lookupPoint(lon, lat, label) {
     var id = districtAt(lon, lat), d = id && byPws(id), o = id && other(id);
     state.pin = [lat, lon];
     if (d) { state.district = d.id; save(); go("home", { msg: "Found: " + d.name + ".", msgErr: false, year: latestYear(d) }); return; }
     if (o) { state.district = null; save(); go("home", { msg: "Your water comes from " + o.name + ". Its full history is coming next. It is outlined on the map below.", msgErr: false }); return; }
-    // Outside the NY-03 districts in TapTrack: ask EPA's boundary map for the system's name.
+    // Not in NY-03: ask EPA's map for the name
     setMsg("Checking EPA's map for " + label + "…");
     var url = "https://services.arcgis.com/cJ9YHowT8TU7DUyn/arcgis/rest/services/Water_System_Boundaries/FeatureServer/0/query?f=json&returnGeometry=false&outFields=PWSID,PWS_Name&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&geometry=" + lon + "," + lat;
     fetch(url).then(function (r) { return r.json(); }).then(function (res) {
@@ -705,8 +697,7 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
     }).catch(function () { setMsg("That address is outside the NY-03 districts TapTrack covers.", true); });
   }
 
-  // ---- Address dropdown: matching addresses with town and ZIP as you type ----
-  // Suggestions come from Photon (komoot), an OpenStreetMap search built for type-ahead. The box limits results to NY-03.
+  // Address suggestions from Photon, limited to the NY-03 area
   var sugg = [], active = -1, suggTimer = null, suggSeq = 0;
   var BBOX = "-73.95,40.55,-73.35,40.95";
   function addrParts(p) {
@@ -721,7 +712,7 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
     return fetch("https://photon.komoot.io/api/?limit=7&lang=en&bbox=" + BBOX + "&q=" + encodeURIComponent(q))
       .then(function (r) { if (!r.ok) throw new Error("photon"); return r.json(); })
       .then(function (j) {
-        if (seq !== suggSeq) return null; // a newer search is on its way
+        if (seq !== suggSeq) return null;
         var seen = {}, out = [];
         (j.features || []).forEach(function (f) {
           var p = f.properties || {};
@@ -774,7 +765,6 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
       }).catch(function () { hideList(); });
     }, 300);
   }
-  // Pressing "Find my water" without picking from the list.
   function findAddress(q) {
     if (sugg.length === 1) { pickSugg(0); return; }
     setMsg("Looking up " + q + "…");
@@ -787,7 +777,7 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
       document.getElementById("addr").focus();
     }).catch(function () { nominatim(q); });
   }
-  // Backup geocoder if Photon is down.
+  // Backup if Photon is down
   function nominatim(q) {
     fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q=" + encodeURIComponent(q), { headers: { "Accept": "application/json" } })
       .then(function (r) { if (!r.ok) throw new Error("geo"); return r.json(); })
@@ -795,8 +785,7 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
       .catch(function (e) { setMsg(e.message === "none" ? "No match for that address. Add the town and NY, or pick your district from the list." : "Address search can't reach the map right now. Pick your district from the list.", true); });
   }
 
-  // ---- Ranking: each district's result as a share of its limit ----
-  // "Overall" uses the district's worst result that year (the one closest to, or furthest over, its limit). No made-up score.
+  // Ranking by share of limit. Overall uses each district's worst result.
   var TONE_RANK = { quietc: 0, good: 1, watch: 2, over: 3 };
   var MAX_YEAR = D.districts.map(latestYear).sort().pop();
   function rating(d, key, year) {
@@ -834,7 +823,6 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
       " Gray dashed outlines are not in TapTrack yet. Tap a district to open it. Outlines: EPA service area map.";
   }
 
-  // ---- District map (Leaflet + OpenStreetMap, outlines from EPA) ----
   var mapObj = null, geoLayer = null, mapTok = {};
   function mapHTML(title) {
     var keys = ["overall"].concat(ORDER);
@@ -855,7 +843,6 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
     var d = byPws(pwsid), o = other(pwsid);
     return d ? esc(d.name + " · " + rateText(rates[pwsid])) : esc((o || { name: pwsid }).name + " · not in TapTrack yet");
   }
-  // Recolor the map and redo the ranking for the current year and "rate by" choice.
   function refreshRanking() {
     var y = rankYear(), rates = {}, el;
     D.districts.forEach(function (d) { rates[d.pwsid] = rating(d, state.rank, y); });
@@ -868,7 +855,6 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
     });
   }
   function initMap() {
-    if (mapObj) { mapObj.remove(); mapObj = null; }
     var el = document.getElementById("map"); if (!el) return;
     if (!window.L) { el.outerHTML = '<p class="basis">The map could not load. Pick your district from the list at the top.</p>'; return; }
     var cs = getComputedStyle(document.documentElement);
@@ -876,7 +862,6 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
     mapTok = { good: tok("--good"), watch: tok("--watch"), over: tok("--over"), muted: tok("--muted"), ink: tok("--ink") };
     var y = rankYear(), rates = {};
     D.districts.forEach(function (d) { rates[d.pwsid] = rating(d, state.rank, y); });
-    // A district under the address pin that TapTrack doesn't cover yet still gets a heavier outline.
     var pinId = state.pin ? districtAt(state.pin[1], state.pin[0]) : null;
     mapObj = L.map(el, { scrollWheelZoom: false });
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(mapObj);
@@ -890,14 +875,14 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
         var p = f.properties.pwsid, d = byPws(p), o = other(p);
         lyr.bindTooltip(mapTip(p, rates), { sticky: true });
         lyr.on("click", function () {
-          setTimeout(function () { // let Leaflet finish the click before the page redraws
+          setTimeout(function () {
             if (d) choose(d.id);
             else if (o) setMsg(o.name + " is outlined in gray: its full history is coming next.", false);
           }, 0);
         });
       }
     });
-    // Leaflet needs a view before it can draw outlines, so fit first, then add. Show all of NY-03 so the colors compare.
+    // Leaflet needs a view before it can draw shapes
     mapObj.fitBounds(geoLayer.getBounds(), { padding: [12, 12] });
     geoLayer.addTo(mapObj);
     if (state.pin) L.circleMarker(state.pin, { radius: 8, color: mapTok.ink, weight: 3, fillColor: tok("--focus"), fillOpacity: 1 }).bindTooltip("Your address").addTo(mapObj);
@@ -920,7 +905,7 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
     if (e.target.id !== "addr") return;
     setTimeout(function () { var c = app.querySelector(".combo"); if (c && !c.contains(document.activeElement)) hideList(); }, 200);
   });
-  app.addEventListener("mousedown", function (e) { if (e.target.closest("[data-opt]")) e.preventDefault(); }); // keep focus in the box while picking
+  app.addEventListener("mousedown", function (e) { if (e.target.closest("[data-opt]")) e.preventDefault(); });
   app.addEventListener("change", function (e) {
     var t = e.target;
     if (t.id === "pick") choose(t.value);
@@ -944,12 +929,11 @@ button.chip[aria-pressed="true"] { background: var(--aquifer); color: var(--grou
     else if (b.dataset.ck) { state.compareKey = b.dataset.ck; render(); var f = app.querySelector('[data-ck="' + b.dataset.ck + '"]'); if (f) f.focus(); }
   });
 
-  // Start from the link if it names a page, otherwise from the district this browser picked last time.
   state.district = load();
   if (byId(state.district)) state.year = latestYear(byId(state.district));
   if ((location.hash || "").length > 1) applyHash();
   else { render(); syncHash(false); }
-  window.TapTrack.expectedYear = expectedYear; // used by tests
+  window.TapTrack.expectedYear = expectedYear;
   window.TapTrack.dueBanner = function (id, now) { return dueBanner(byId(id), now); };
 })();
 </script>

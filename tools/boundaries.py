@@ -1,11 +1,6 @@
-"""Download water district boundaries from EPA into data/boundaries.geojson.
+"""Download district outlines from EPA's service area map into data/boundaries.geojson.
 
-Usage: python tools/boundaries.py
-
-Takes every PWSID in data/water.json (districts and otherDistricts) and asks
-EPA's Community Water System Service Area Boundaries layer for its outline.
-Shapes are simplified (about 20 m) so the whole file stays small. build.py
-puts the file into the app, so the map and address lookup work offline.
+  python tools/boundaries.py
 """
 import json
 import pathlib

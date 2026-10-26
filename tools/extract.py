@@ -1,17 +1,8 @@
-"""Pull contaminant rows out of a district's Annual Drinking Water Quality Report PDF.
+"""Read contaminant rows from a water district report PDF.
 
-Usage:
-  python tools/extract.py <pdf url or path>         print every row found for each contaminant
-  python tools/extract.py --check                   compare every report in data/water.json
+  python tools/extract.py <pdf url or path>    show the rows found
+  python tools/extract.py --check              compare data/water.json to every report
   python tools/extract.py --check --district jericho --year 2024
-
-The check never edits data/water.json. It prints a table and a list of
-mismatches to check by hand against the PDF.
-
-How it works: pdfplumber reads the text of each page (and any tables it can
-detect). A line belongs to a contaminant if it names it. Numbers and units on
-that line are pulled out. A JSON value "matches" when the same number appears
-on one of that contaminant's lines in that year's report.
 """
 import argparse
 import hashlib
@@ -26,7 +17,6 @@ import pdfplumber
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 CACHE = ROOT / "tools" / ".cache"
 
-# How each contaminant is named in the reports.
 NAMES = {
     "dioxane": r"1\s*,\s*4\s*-?\s*dioxane",
     "pfoa": r"\bPFOA\b|perfluoro-?\s*octanoic",
@@ -34,7 +24,6 @@ NAMES = {
     "nitrate": r"\bnitrate",
     "lead": r"\blead\b",
 }
-# Fixed TapTrack units, for flagging rows printed in a different unit.
 EXPECTED_UNIT = {"dioxane": "ug/l", "pfoa": "ng/l", "pfos": "ng/l", "nitrate": "mg/l", "lead": "ug/l"}
 UNIT_RE = re.compile(r"(µg/l|μg/l|ug/l|ng/l|mg/l|ppb|ppt|ppm)", re.I)
 UNIT_NORM = {"µg/l": "ug/l", "μg/l": "ug/l", "ug/l": "ug/l", "ppb": "ug/l", "ng/l": "ng/l", "ppt": "ng/l", "mg/l": "mg/l", "ppm": "mg/l"}
@@ -50,12 +39,12 @@ DATE_RE = re.compile(
 )
 NUM_RE = re.compile(r"(?<![A-Za-z\d.])(\d+(?:\.\d+)?)")
 ND_RE = re.compile(r"\bN\.?D\.?\b|non-?detect|not detected", re.I)
-# Heading of a "tested for but not found" list, e.g. "over 130 different contaminants which have been undetected".
+# Heading of a "tested but not detected" list
 ND_LIST_RE = re.compile(r"contaminants\s+(?:which|that)\s+(?:have\s+been|were)\s+(?:undetected|not\s+detected)|tested\s+for\s+but\s+not\s+detected", re.I)
 
 
 def fetch(src):
-    """Return a local path for a URL (downloaded once into tools/.cache) or a file path."""
+    """Download a URL once into tools/.cache, or return a local path."""
     if not re.match(r"https?://", src):
         return pathlib.Path(src)
     CACHE.mkdir(parents=True, exist_ok=True)
@@ -69,8 +58,7 @@ def fetch(src):
 
 
 def lines_of(path):
-    """Every text line, plus every detected table row joined with ' | '.
-    Lines on a page with a "not detected" list heading are marked nd_page."""
+    """Every text line and table row in the PDF."""
     out = []
     with pdfplumber.open(path) as pdf:
         for n, page in enumerate(pdf.pages, 1):
@@ -88,10 +76,9 @@ def lines_of(path):
 
 
 def parse(key, line):
-    """Pull numbers, units, dates and ND marks from one contaminant line."""
     text = line["text"]
     body = re.sub(NAMES[key], " ", text, flags=re.I)
-    # Name on one line, numbers on the next: borrow the following lines.
+    # Some tables put the numbers on the next line
     if not NUM_RE.search(DATE_RE.sub(" ", body)) and line["next"]:
         body += " " + " ".join(line["next"])
     dates = [d.strip() for d in DATE_RE.findall(body) if d.strip()]
@@ -104,11 +91,10 @@ def parse(key, line):
 
 
 def is_row(key, p):
-    """Keep lines that look like a results row, not running text."""
     if not (p["nums"] or p["nd"]):
         return False
     if key == "lead":
-        # "lead" shows up in a lot of prose about service lines. Results rows have a unit or "90th".
+        # "lead" appears in a lot of plain text, so require a unit or "90th"
         return bool(p["units"]) or bool(re.search(r"90", p["text"]))
     return len(p["text"]) < 220 or p["table"]
 
@@ -120,9 +106,8 @@ def extract(src):
     for line in lines:
         for key, pat in NAMES.items():
             if re.search(pat, line["text"], re.I):
-                # A list line has no unit and no decimal result (chemical names like "2,4-D" have digits).
                 if line.get("nd_page") and not UNIT_RE.search(line["text"]) and not re.search(r"\d\.\d", line["text"]):
-                    nd_list[key] = True  # named in a "tested, not detected" list
+                    nd_list[key] = True
                 p = parse(key, line)
                 if is_row(key, p):
                     found[key].append(p)
@@ -159,7 +144,7 @@ def check(district_id=None, year=None):
                 continue
             try:
                 found, nd_list, n = extract(url)
-            except Exception as e:  # network or PDF trouble: report it, keep going
+            except Exception as e:
                 problems.append(f"{d['id']} {y}: could not read report ({e}). {url}")
                 continue
             if not n:
@@ -172,7 +157,7 @@ def check(district_id=None, year=None):
                 units = sorted({u for p in hits for u in p["units"]})
                 lead_seen = key == "lead" and any(abs(x - v) < 1e-9 for x in nums for v in d["series"].get("lead", {}).values())
                 if have is None and lead_seen:
-                    status = "-"  # lead is sampled every 3 years; reports repeat it, and TapTrack files it under the sampling year
+                    status = "-"  # lead is filed under its sampling year
                 elif have is None:
                     status = "listed ND, JSON blank" if nd_list[key] and key != "lead" else ("report has rows, JSON blank" if nums else "-")
                 elif have == 0:
